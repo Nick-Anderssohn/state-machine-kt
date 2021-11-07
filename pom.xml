@@ -28,16 +28,47 @@
       <artifactId>kotlin-stdlib-jdk8</artifactId>
       <version>${kotlin.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.github.microutils</groupId>
+      <artifactId>kotlin-logging</artifactId>
+      <version>1.12.5</version>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>5.8.1</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.8.1</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-test</artifactId>
       <version>${kotlin.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.kotlintest/kotlintest-runner-junit5 -->
+    <dependency>
+      <groupId>io.kotlintest</groupId>
+      <artifactId>kotlintest-runner-junit5</artifactId>
+      <version>3.4.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.32</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -51,26 +82,49 @@
     <!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
     <plugins>
       <plugin>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-maven-plugin</artifactId>
-        <version>${kotlin.version}</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
         <executions>
           <execution>
-            <id>compile</id>
-            <phase>compile</phase>
+            <id>ktlint</id>
+            <phase>verify</phase>
+            <configuration>
+              <target name="ktlint">
+                <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
+                      classpathref="maven.plugin.classpath" classname="com.pinterest.ktlint.Main">
+                  <arg value="src/**/*.kt"/>
+                </java>
+              </target>
+            </configuration>
             <goals>
-              <goal>compile</goal>
+              <goal>run</goal>
             </goals>
           </execution>
-
           <execution>
-            <id>test-compile</id>
-            <phase>test-compile</phase>
+            <id>ktlint-format</id>
+            <configuration>
+              <target name="ktlint">
+                <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
+                      classpathref="maven.plugin.classpath" classname="com.pinterest.ktlint.Main">
+                  <arg value="-F"/>
+                  <arg value="src/**/*.kt"/>
+                </java>
+              </target>
+            </configuration>
             <goals>
-              <goal>test-compile</goal>
+              <goal>run</goal>
             </goals>
           </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>com.pinterest</groupId>
+            <artifactId>ktlint</artifactId>
+            <version>0.42.1</version>
+          </dependency>
+          <!-- additional 3rd party ruleset(s) can be specified here -->
+        </dependencies>
       </plugin>
 
       <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->

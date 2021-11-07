@@ -14,5 +14,16 @@
   <url>https://www.mrstatemachine.com</url>
 
   <dependencies>
+    <dependency>
+      <groupId>com.mrstatemachine</groupId>
+      <artifactId>mr-state-machine-interfaces</artifactId>
+      <version>0.1-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
+
+  <build>
+    <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+  </build>
 </project>

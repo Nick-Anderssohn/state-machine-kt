@@ -1,5 +1,5 @@
 package com.mrstatemachine
 
 interface StateProcessor {
-    fun run()
+    suspend fun run(): Any
 }
