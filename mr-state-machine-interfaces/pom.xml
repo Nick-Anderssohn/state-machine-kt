@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>mr-state-machine</artifactId>
+    <groupId>com.mrstatemachine</groupId>
+    <version>0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>mr-state-machine-interfaces</artifactId>
+  <version>0.1-SNAPSHOT</version>
+
+  <name>mr-state-machine-interfaces</name>
+  <url>https://www.mrstatemachine.com</url>
+
+  <dependencies>
+  </dependencies>
+</project>
