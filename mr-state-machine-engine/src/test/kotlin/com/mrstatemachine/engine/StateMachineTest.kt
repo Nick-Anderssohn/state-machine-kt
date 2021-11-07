@@ -16,31 +16,30 @@ class StateMachineTest {
 
     @Test
     fun `light bulb state machine transitions correctly`() {
-        val onState = Vertex<Event, State>(
-            state = State.LightOn
-        )
+        val stateMachine = StateMachine<State, Event> {
+            startingState(State.LightOff)
 
-        val offState = Vertex<Event, State>(
-            state = State.LightOff,
-            transitions = mutableMapOf(
-                Event.OnClicked to Transition(onState)
-            )
-        )
+            state(State.LightOff) {
+                on(Event.OnClicked) {
+                    transitionTo(State.LightOn)
+                }
+            }
 
-        onState.transitions[Event.OffClicked] = Transition(offState)
+            state(State.LightOn) {
+                on(Event.OffClicked) {
+                    transitionTo(State.LightOff)
+                }
+            }
+        }
 
-        val stateMachine = StateMachine<Event, State>(
-            acceptingState = offState
-        )
-
-        stateMachine.currentVertex shouldBe onState
+        stateMachine.currentVertex.state shouldBe State.LightOff
 
         stateMachine.processEvent(Event.OnClicked)
 
-        stateMachine.currentVertex shouldBe onState
+        stateMachine.currentVertex.state shouldBe State.LightOn
 
         stateMachine.processEvent(Event.OffClicked)
 
-        stateMachine.currentVertex shouldBe offState
+        stateMachine.currentVertex.state shouldBe State.LightOff
     }
 }
