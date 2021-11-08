@@ -1,8 +1,8 @@
 package com.mrstatemachine.engine
 
-import com.mrstatemachine.StateProcessor
+import com.mrstatemachine.Task
 
-object NoOpProcessor : StateProcessor {
+object NoOpProcessor : Task {
     override suspend fun run() {
         // Intentionally does nothing
     }

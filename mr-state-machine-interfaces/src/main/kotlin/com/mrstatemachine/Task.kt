@@ -1,5 +1,5 @@
 package com.mrstatemachine
 
-interface StateProcessor {
+interface Task {
     suspend fun run(): Any
 }

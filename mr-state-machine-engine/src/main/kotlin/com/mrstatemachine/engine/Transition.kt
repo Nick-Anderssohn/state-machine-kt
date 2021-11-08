@@ -1,7 +1,10 @@
 package com.mrstatemachine.engine
 
-data class Transition<TStateBase : Any>(
-    val next: TStateBase
+import com.mrstatemachine.Task
+
+class Transition<TStateBase : Any> private constructor(
+    val next: TStateBase,
+    val task: Task?
 ) {
     companion object {
         operator fun <TStateBase : Any> invoke(
@@ -15,11 +18,27 @@ data class Transition<TStateBase : Any>(
 
     class Builder<TStateBase : Any> {
         private lateinit var nextState: TStateBase
+        private var task: Task? = null
 
         fun transitionTo(nextState: TStateBase) {
+            require(!this::nextState.isInitialized) {
+                "next state is already configured to $nextState"
+            }
+
             this.nextState = nextState
         }
 
-        fun build() = Transition(nextState)
+        fun transitionTask(task: Task?) {
+            require(this.task == null) {
+                "there can only be one task per transition"
+            }
+
+            this.task = task
+        }
+
+        fun build() = Transition(
+            next = nextState,
+            task = task
+        )
     }
 }

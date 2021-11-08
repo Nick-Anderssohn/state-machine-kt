@@ -17,12 +17,16 @@ class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
     var currentVertex = requireNotNull(vertices[startingState]) { "unknown accepting state" }
         private set
 
-    fun processEvent(event: TEventBase) {
+    suspend fun processEvent(event: TEventBase) {
         val transition = requireNotNull(currentVertex.transitions[event]) {
             "provided event cannot be handled by current vertex"
         }
 
-        currentVertex = requireNotNull(vertices[transition.next]) { "state ${currentVertex.state} does not support event $event" }
+        val nextVertex = requireNotNull(vertices[transition.next]) { "state ${currentVertex.state} does not support event $event" }
+
+        val taskResult = transition.task?.run()
+
+        currentVertex = nextVertex
     }
 
     class Builder<TStateBase : Any, TEventBase : Any> {
@@ -30,6 +34,10 @@ class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
         private val vertices: MutableMap<TStateBase, Vertex<TStateBase, TEventBase>> = mutableMapOf()
 
         fun startingState(value: TStateBase) {
+            require(!this::acceptingState.isInitialized) {
+                "state machine can only have one starting state!"
+            }
+
             this.acceptingState = value
         }
 

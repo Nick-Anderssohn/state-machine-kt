@@ -1,6 +1,6 @@
 package com.mrstatemachine.engine
 
-data class Vertex<TStateBase : Any, TEventBase : Any>(
+class Vertex<TStateBase : Any, TEventBase : Any>(
     val state: TStateBase,
     val transitions: Map<TEventBase, Transition<TStateBase>>
 ) {
