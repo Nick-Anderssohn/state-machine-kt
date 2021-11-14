@@ -59,6 +59,10 @@ class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
         }
 
         fun state(state: TStateBase, fn: Vertex.Builder<TStateBase, TEventBase>.() -> Unit) {
+            require(state !in vertices) {
+                "each state may only be defined once"
+            }
+
             vertices[state] = Vertex(state, fn)
         }
 

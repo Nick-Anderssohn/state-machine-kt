@@ -20,18 +20,12 @@ class LightBulbTest {
     fun `light bulb state machine transitions correctly`() {
         val transitionRecords: MutableList<String> = mutableListOf()
 
-        val turnLightOn = object : TransitionTask<Event.OnClicked> {
-            override suspend fun run(event: Event.OnClicked) {
-                transitionRecords += "light on"
-                return Unit
-            }
+        val turnLightOn = TransitionTask<Event.OnClicked> {
+            transitionRecords += "light on"
         }
 
-        val turnLightOff = object : TransitionTask<Event.OffClicked> {
-            override suspend fun run(event: Event.OffClicked) {
-                transitionRecords += "light off"
-                return Unit
-            }
+        val turnLightOff = TransitionTask<Event.OffClicked> {
+            transitionRecords += "light off"
         }
 
         val stateMachine = StateMachine<State, Event> {
