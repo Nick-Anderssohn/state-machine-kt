@@ -20,6 +20,12 @@
       <version>0.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.jetbrains.kotlinx</groupId>
+      <artifactId>kotlinx-coroutines-core</artifactId>
+      <version>${kotlin.coroutines.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

@@ -1,5 +1,5 @@
 package com.mrstatemachine
 
 interface Task {
-    suspend fun run(): Any
+    suspend fun run(): Unit
 }

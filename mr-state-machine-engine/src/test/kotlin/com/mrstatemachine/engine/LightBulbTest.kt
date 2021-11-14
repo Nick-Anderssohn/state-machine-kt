@@ -18,18 +18,18 @@ class LightBulbTest {
 
     @Test
     fun `light bulb state machine transitions correctly`() {
-        val records: MutableList<String> = mutableListOf()
+        val transitionRecords: MutableList<String> = mutableListOf()
 
         val turnLightOn = object : Task {
-            override suspend fun run(): Any {
-                records += "light on"
+            override suspend fun run() {
+                transitionRecords += "light on"
                 return Unit
             }
         }
 
         val turnLightOff = object : Task {
-            override suspend fun run(): Any {
-                records += "light off"
+            override suspend fun run() {
+                transitionRecords += "light off"
                 return Unit
             }
         }
@@ -39,36 +39,36 @@ class LightBulbTest {
 
             state(State.LightOff) {
                 on(Event.OnClicked) {
+                    execute(turnLightOn)
                     transitionTo(State.LightOn)
-                    transitionTask(turnLightOn)
                 }
             }
 
             state(State.LightOn) {
                 on(Event.OffClicked) {
+                    execute(turnLightOff)
                     transitionTo(State.LightOff)
-                    transitionTask(turnLightOff)
                 }
             }
         }
 
         runBlocking {
-            stateMachine.currentVertex.state shouldBe State.LightOff
+            stateMachine.currentVertices.first().state shouldBe State.LightOff
 
             stateMachine.processEvent(Event.OnClicked)
 
-            records shouldBe mutableListOf("light on")
+            transitionRecords shouldBe mutableListOf("light on")
 
-            stateMachine.currentVertex.state shouldBe State.LightOn
+            stateMachine.currentVertices.first().state shouldBe State.LightOn
 
             stateMachine.processEvent(Event.OffClicked)
 
-            records shouldBe mutableListOf(
+            transitionRecords shouldBe mutableListOf(
                 "light on",
                 "light off"
             )
 
-            stateMachine.currentVertex.state shouldBe State.LightOff
+            stateMachine.currentVertices.first().state shouldBe State.LightOff
         }
     }
 }

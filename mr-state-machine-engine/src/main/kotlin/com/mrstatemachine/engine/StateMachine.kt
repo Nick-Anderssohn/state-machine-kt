@@ -1,5 +1,9 @@
 package com.mrstatemachine.engine
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import java.util.concurrent.ConcurrentHashMap
+
 class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
     private val startingState: TStateBase,
     private val vertices: Map<TStateBase, Vertex<TStateBase, TEventBase>>
@@ -14,19 +18,23 @@ class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
         }
     }
 
-    var currentVertex = requireNotNull(vertices[startingState]) { "unknown accepting state" }
-        private set
+    internal val currentVertices = ConcurrentHashMap.newKeySet<Vertex<TStateBase, TEventBase>>()
+        .apply { this += vertices[startingState] }
 
-    suspend fun processEvent(event: TEventBase) {
-        val transition = requireNotNull(currentVertex.transitions[event]) {
-            "provided event cannot be handled by current vertex"
+    // Todo: What are we going to do with failures?
+    suspend fun processEvent(event: TEventBase) = supervisorScope {
+        for (vertex in currentVertices) {
+            launch {
+                val transition = vertex.transitions[event] ?: return@launch
+
+                val nextVertex = vertices[transition.next]
+
+                transition.task?.run()
+
+                currentVertices -= vertex
+                currentVertices += nextVertex
+            }
         }
-
-        val nextVertex = requireNotNull(vertices[transition.next]) { "state ${currentVertex.state} does not support event $event" }
-
-        val taskResult = transition.task?.run()
-
-        currentVertex = nextVertex
     }
 
     class Builder<TStateBase : Any, TEventBase : Any> {

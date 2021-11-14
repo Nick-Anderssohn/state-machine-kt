@@ -28,7 +28,7 @@ class Transition<TStateBase : Any> private constructor(
             this.nextState = nextState
         }
 
-        fun transitionTask(task: Task?) {
+        fun execute(task: Task?) {
             require(this.task == null) {
                 "there can only be one task per transition"
             }
