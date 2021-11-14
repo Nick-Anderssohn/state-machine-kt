@@ -24,15 +24,17 @@ class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
     // Todo: What are we going to do with failures?
     suspend fun processEvent(event: TEventBase) = supervisorScope {
         for (vertex in currentVertices) {
-            launch {
-                val transition = vertex.transitions[event] ?: return@launch
+            val transitions = vertex.transitions[event]?.values ?: continue
 
-                val nextVertex = vertices[transition.next]
+            for (transition in transitions) {
+                launch {
+                    val nextVertex = vertices[transition.next]
 
-                transition.task?.run()
+                    transition.task?.run()
 
-                currentVertices -= vertex
-                currentVertices += nextVertex
+                    currentVertices -= vertex
+                    currentVertices += nextVertex
+                }
             }
         }
     }

@@ -2,7 +2,12 @@ package com.mrstatemachine.engine
 
 class Vertex<TStateBase : Any, TEventBase : Any>(
     val state: TStateBase,
-    val transitions: Map<TEventBase, Transition<TStateBase>>
+
+    /**
+     * key = event
+     * value = { map where key=nextState and value=transitionToNextState }
+     */
+    val transitions: Map<TEventBase, Map<TStateBase, Transition<TStateBase>>>
 ) {
     companion object {
         operator fun <TStateBase : Any, TEventBase : Any> invoke(
@@ -18,12 +23,26 @@ class Vertex<TStateBase : Any, TEventBase : Any>(
     class Builder<TStateBase : Any, TEventBase : Any>(
         private val state: TStateBase
     ) {
-        private val transitions: MutableMap<TEventBase, Transition<TStateBase>> = mutableMapOf()
+        private val transitions: MutableMap<TEventBase, Map<TStateBase, Transition<TStateBase>>> = mutableMapOf()
 
-        fun on(event: TEventBase, fn: Transition.Builder<TStateBase>.() -> Unit) {
+        fun on(event: TEventBase, fn: TransitionsBuilder<TStateBase>.() -> Unit) {
             require(event !in transitions) { "you may only register each event once per state" }
 
-            transitions[event] = Transition<TStateBase>(fn)
+            val newTransitions = TransitionsBuilder<TStateBase>()
+                .apply { fn() }
+                .build()
+
+            val newTransitionsByState = mutableMapOf<TStateBase, Transition<TStateBase>>()
+
+            for (transition in newTransitions) {
+                require(transition.next !in newTransitionsByState) {
+                    "each parallel transition must point to a different state"
+                }
+
+                newTransitionsByState[transition.next] = transition
+            }
+
+            transitions[event] = newTransitionsByState
         }
 
         fun build() = Vertex<TStateBase, TEventBase>(state, transitions)

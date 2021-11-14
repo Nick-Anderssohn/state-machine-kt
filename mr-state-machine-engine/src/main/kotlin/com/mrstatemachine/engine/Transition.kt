@@ -2,6 +2,11 @@ package com.mrstatemachine.engine
 
 import com.mrstatemachine.Task
 
+interface TransitionBuilder<TStateBase : Any> {
+    fun transitionTo(nextState: TStateBase)
+    fun execute(task: Task?)
+}
+
 class Transition<TStateBase : Any> private constructor(
     val next: TStateBase,
     val task: Task?
@@ -16,11 +21,13 @@ class Transition<TStateBase : Any> private constructor(
         }
     }
 
-    class Builder<TStateBase : Any> {
-        private lateinit var nextState: TStateBase
+    class Builder<TStateBase : Any> : TransitionBuilder<TStateBase> {
+        internal var isInitialized = false
+        internal lateinit var nextState: TStateBase
+
         private var task: Task? = null
 
-        fun transitionTo(nextState: TStateBase) {
+        override fun transitionTo(nextState: TStateBase) = builderFn {
             require(!this::nextState.isInitialized) {
                 "next state is already configured to $nextState"
             }
@@ -28,7 +35,7 @@ class Transition<TStateBase : Any> private constructor(
             this.nextState = nextState
         }
 
-        fun execute(task: Task?) {
+        override fun execute(task: Task?) = builderFn {
             require(this.task == null) {
                 "there can only be one task per transition"
             }
@@ -36,9 +43,34 @@ class Transition<TStateBase : Any> private constructor(
             this.task = task
         }
 
-        fun build() = Transition(
+        internal fun build() = Transition(
             next = nextState,
             task = task
         )
+
+        private fun builderFn(fn: Builder<TStateBase>.() -> Unit) {
+            isInitialized = true
+            this.fn()
+        }
+    }
+}
+
+class TransitionsBuilder<TStateBase : Any>internal constructor(
+    private val singleTransitionBuilder: Transition.Builder<TStateBase> = Transition.Builder<TStateBase>()
+) : TransitionBuilder<TStateBase> by singleTransitionBuilder {
+    private val parallelTransitions: MutableList<Transition.Builder<TStateBase>.() -> Unit> = mutableListOf()
+
+    fun inParallel(fn: Transition.Builder<TStateBase>.() -> Unit) {
+        parallelTransitions += fn
+    }
+
+    internal fun build(): List<Transition<TStateBase>> {
+        val transitions = parallelTransitions.map { Transition<TStateBase>(it) }
+
+        if (singleTransitionBuilder.isInitialized) {
+            return transitions + singleTransitionBuilder.build()
+        }
+
+        return transitions
     }
 }
