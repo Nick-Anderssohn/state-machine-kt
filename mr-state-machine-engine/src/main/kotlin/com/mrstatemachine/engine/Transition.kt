@@ -1,31 +1,31 @@
 package com.mrstatemachine.engine
 
-import com.mrstatemachine.Task
+import com.mrstatemachine.TransitionTask
 
-interface TransitionBuilder<TStateBase : Any> {
+interface TransitionBuilder<TStateBase : Any, TEvent : Any> {
     fun transitionTo(nextState: TStateBase)
-    fun execute(task: Task?)
+    fun execute(task: TransitionTask<TEvent>?)
 }
 
-class Transition<TStateBase : Any> private constructor(
+class Transition<TStateBase : Any, in TEvent : Any> private constructor(
     val next: TStateBase,
-    val task: Task?
+    val task: TransitionTask<TEvent>?
 ) {
     companion object {
-        operator fun <TStateBase : Any> invoke(
-            fn: Builder<TStateBase>.() -> Unit
-        ): Transition<TStateBase> {
-            val builder = Builder<TStateBase>()
+        operator fun <TStateBase : Any, TEvent : Any> invoke(
+            fn: Builder<TStateBase, TEvent>.() -> Unit
+        ): Transition<TStateBase, TEvent> {
+            val builder = Builder<TStateBase, TEvent>()
             builder.fn()
             return builder.build()
         }
     }
 
-    class Builder<TStateBase : Any> : TransitionBuilder<TStateBase> {
+    class Builder<TStateBase : Any, TEvent : Any> : TransitionBuilder<TStateBase, TEvent> {
         internal var isInitialized = false
-        internal lateinit var nextState: TStateBase
+        private lateinit var nextState: TStateBase
 
-        private var task: Task? = null
+        private var task: TransitionTask<TEvent>? = null
 
         override fun transitionTo(nextState: TStateBase) = builderFn {
             require(!this::nextState.isInitialized) {
@@ -35,7 +35,7 @@ class Transition<TStateBase : Any> private constructor(
             this.nextState = nextState
         }
 
-        override fun execute(task: Task?) = builderFn {
+        override fun execute(task: TransitionTask<TEvent>?) = builderFn {
             require(this.task == null) {
                 "there can only be one task per transition"
             }
@@ -48,24 +48,24 @@ class Transition<TStateBase : Any> private constructor(
             task = task
         )
 
-        private fun builderFn(fn: Builder<TStateBase>.() -> Unit) {
+        private fun builderFn(fn: Builder<TStateBase, TEvent>.() -> Unit) {
             isInitialized = true
             this.fn()
         }
     }
 }
 
-class TransitionsBuilder<TStateBase : Any>internal constructor(
-    private val singleTransitionBuilder: Transition.Builder<TStateBase> = Transition.Builder<TStateBase>()
-) : TransitionBuilder<TStateBase> by singleTransitionBuilder {
-    private val parallelTransitions: MutableList<Transition.Builder<TStateBase>.() -> Unit> = mutableListOf()
+class TransitionsBuilder<TStateBase : Any, TEvent : Any>internal constructor(
+    private val singleTransitionBuilder: Transition.Builder<TStateBase, TEvent> = Transition.Builder<TStateBase, TEvent>()
+) : TransitionBuilder<TStateBase, TEvent> by singleTransitionBuilder {
+    private val parallelTransitions: MutableList<Transition.Builder<TStateBase, TEvent>.() -> Unit> = mutableListOf()
 
-    fun inParallel(fn: Transition.Builder<TStateBase>.() -> Unit) {
+    fun inParallel(fn: Transition.Builder<TStateBase, TEvent>.() -> Unit) {
         parallelTransitions += fn
     }
 
-    internal fun build(): List<Transition<TStateBase>> {
-        val transitions = parallelTransitions.map { Transition<TStateBase>(it) }
+    internal fun build(): List<Transition<TStateBase, TEvent>> {
+        val transitions = parallelTransitions.map { Transition<TStateBase, TEvent>(it) }
 
         if (singleTransitionBuilder.isInitialized) {
             return transitions + singleTransitionBuilder.build()
