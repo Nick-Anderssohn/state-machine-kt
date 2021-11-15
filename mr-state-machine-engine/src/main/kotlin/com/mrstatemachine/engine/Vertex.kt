@@ -1,15 +1,15 @@
 package com.mrstatemachine.engine
 
+import com.mrstatemachine.StateProcessor
+
 class Vertex<TStateBase : Any, TEventBase : Any>(
     val state: TStateBase,
 
-    /**
-     * key = event
-     * value = { map where key=nextState and value=transitionToNextState }
-     */
-    val transitions: Map<TEventBase, Map<TStateBase, Transition<TStateBase, *>>>,
+    val transitions: Map<TEventBase, StateTransition<TStateBase, *>>,
 
-    val typeBasedEventTransitions: Map<Class<out TEventBase>, Map<TStateBase, Transition<TStateBase, *>>>
+    val typeBasedEventTransitions: Map<Class<out TEventBase>, StateTransition<TStateBase, *>>,
+
+    val stateProcessor: StateProcessor<TStateBase>?
 ) {
     companion object {
         operator fun <TStateBase : Any, TEventBase : Any> invoke(
@@ -25,9 +25,11 @@ class Vertex<TStateBase : Any, TEventBase : Any>(
     class Builder<TStateBase : Any, TEventBase : Any>(
         private val state: TStateBase
     ) {
-        private val transitions = mutableMapOf<TEventBase, Map<TStateBase, Transition<TStateBase, *>>>()
+        private val transitions = mutableMapOf<TEventBase, StateTransition<TStateBase, *>>()
 
-        private val typeBasedEventTransitions = mutableMapOf<Class<out TEventBase>, Map<TStateBase, Transition<TStateBase, *>>>()
+        private val typeBasedEventTransitions = mutableMapOf<Class<out TEventBase>, StateTransition<TStateBase, *>>()
+
+        private var arrivalBuildData: ArrivalBuilder.BuildData<TStateBase>? = null
 
         inline fun <reified TEvent : TEventBase> on(noinline fn: TransitionsBuilder<TStateBase, TEvent>.() -> Unit) {
             on(TEvent::class.java, fn)
@@ -36,38 +38,53 @@ class Vertex<TStateBase : Any, TEventBase : Any>(
         @PublishedApi
         internal fun <TEvent : TEventBase> on(clazz: Class<TEvent>, fn: TransitionsBuilder<TStateBase, TEvent>.() -> Unit) {
             require(clazz !in typeBasedEventTransitions) { "you may only register each event once per state" }
-            typeBasedEventTransitions[clazz] = buildTransitionsByState(fn)
+            typeBasedEventTransitions[clazz] = buildTransition(fn)
         }
 
         fun <TEvent : TEventBase> on(event: TEvent, fn: TransitionsBuilder<TStateBase, TEvent>.() -> Unit) {
             require(event !in transitions) { "you may only register each event once per state" }
-            transitions[event] = buildTransitionsByState(fn)
+            transitions[event] = buildTransition(fn)
+        }
+
+        fun uponArrival(fn: ArrivalBuilder<TStateBase>.() -> Unit) {
+            val builder = ArrivalBuilder<TStateBase>()
+            builder.fn()
+            arrivalBuildData = builder.build()
         }
 
         fun build() = Vertex<TStateBase, TEventBase>(
             state = state,
             transitions = transitions,
-            typeBasedEventTransitions = typeBasedEventTransitions
+            typeBasedEventTransitions = typeBasedEventTransitions,
+            stateProcessor = StateProcessor(
+                onArrival = arrivalBuildData?.onArrival,
+                postArrivalNextState = arrivalBuildData?.postArrivalNextState
+            )
         )
 
-        private fun <TEvent : TEventBase> buildTransitionsByState(
+        private fun <TEvent : TEventBase> buildTransition(
             fn: TransitionsBuilder<TStateBase, TEvent>.() -> Unit
-        ): Map<TStateBase, Transition<TStateBase, TEvent>> {
-            val newTransitions = TransitionsBuilder<TStateBase, TEvent>()
-                .apply { fn() }
-                .build()
+        ) = TransitionsBuilder<TStateBase, TEvent>()
+            .apply { fn() }
+            .buildStateTransition()
+    }
 
-            val newTransitionsByState = mutableMapOf<TStateBase, Transition<TStateBase, TEvent>>()
+    class ArrivalBuilder<TStateBase : Any> {
+        private val result = BuildData<TStateBase>()
 
-            for (transition in newTransitions) {
-                require(transition.next !in newTransitionsByState) {
-                    "each parallel transition must point to a different state"
-                }
-
-                newTransitionsByState[transition.next] = transition
-            }
-
-            return newTransitionsByState
+        fun run(fn: suspend () -> Unit) {
+            this.result.onArrival = fn
         }
+
+        fun afterRunTransitionTo(next: TStateBase?) {
+            this.result.postArrivalNextState = next
+        }
+
+        fun build() = result
+
+        data class BuildData<TStateBase : Any>(
+            var postArrivalNextState: TStateBase? = null,
+            var onArrival: (suspend () -> Unit)? = null
+        )
     }
 }

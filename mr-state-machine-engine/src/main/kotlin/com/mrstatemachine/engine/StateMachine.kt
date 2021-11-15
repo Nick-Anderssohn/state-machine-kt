@@ -1,9 +1,6 @@
 package com.mrstatemachine.engine
 
 import com.mrstatemachine.TransitionTask
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
-import java.util.concurrent.ConcurrentHashMap
 
 class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
     private val startingState: TStateBase,
@@ -19,29 +16,26 @@ class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
         }
     }
 
-    internal val currentVertices = ConcurrentHashMap.newKeySet<Vertex<TStateBase, TEventBase>>()
-        .apply { this += vertices[startingState] }
+    @Volatile
+    var currentVertex: Vertex<TStateBase, TEventBase> = requireNotNull(vertices[startingState]) {
+        "no configuration exists for starting state"
+    }
 
     // Todo: What are we going to do with failures?
-    suspend fun <TEvent : TEventBase> processEvent(event: TEvent) = supervisorScope {
-        for (vertex in currentVertices) {
-            val transitions = vertex.transitions[event]?.values
-                ?: vertex.typeBasedEventTransitions[event::class.java]?.values
-                ?: continue
+    suspend fun <TEvent : TEventBase> processEvent(event: TEvent) {
+        val transition = currentVertex.transitions[event]
+            ?: currentVertex.typeBasedEventTransitions[event::class.java]
+            ?: return
 
-            for (transition in transitions) {
-                launch {
-                    val nextVertex = vertices[transition.next]
+        val nextVertex = vertices[transition.next]
 
-                    if (transition.task != null) {
-                        (transition.task as TransitionTask<TEvent>).run(event)
-                    }
-
-                    currentVertices -= vertex
-                    currentVertices += nextVertex
-                }
-            }
+        if (transition.task != null) {
+            (transition.task as TransitionTask<TEvent>).run(event)
         }
+
+        currentVertex = nextVertex!!
+
+        nextVertex.stateProcessor?.onArrival?.invoke()
 
         // Todo: Should we do something if none of the current vertices can handle the provided event?
     }
