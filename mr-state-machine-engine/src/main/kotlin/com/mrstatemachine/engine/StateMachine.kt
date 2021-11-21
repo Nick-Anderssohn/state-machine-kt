@@ -3,7 +3,7 @@ package com.mrstatemachine.engine
 import com.mrstatemachine.TransitionTask
 
 class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> private constructor(
-    private val stateStore: StateStore<TStateBase, TExtendedState>,
+    internal val stateStore: StateStore<TStateBase, TExtendedState>,
     private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase, *, *>>
 ) {
     companion object {

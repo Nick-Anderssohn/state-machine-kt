@@ -121,6 +121,11 @@ class EtlTest {
             foo = "I'm foo!",
             bar = "I'm bar!"
         )
+
+        etl.stateStore shouldBe StateStore(
+            currentState = State.Waiting,
+            extendedState = ExtendedState()
+        )
     }
 }
 

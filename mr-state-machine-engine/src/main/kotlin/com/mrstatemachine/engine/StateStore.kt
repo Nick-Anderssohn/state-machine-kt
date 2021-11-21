@@ -1,6 +1,6 @@
 package com.mrstatemachine.engine
 
-internal class StateStore<TStateBase : Any, TExtendedState : Any>(
+internal data class StateStore<TStateBase : Any, TExtendedState : Any>(
     @Volatile
     var currentState: TStateBase,
 
