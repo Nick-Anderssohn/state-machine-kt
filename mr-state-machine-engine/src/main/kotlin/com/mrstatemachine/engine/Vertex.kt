@@ -13,9 +13,7 @@ class Vertex<
     >(
     val state: TStateBase,
 
-    val transitions: Map<TEventBase, StateTransition<TStateBase, *>>,
-
-    val typeBasedEventTransitions: Map<Class<out TEventBase>, StateTransition<TStateBase, *>>,
+    val transitions: Map<Class<out TEventBase>, StateTransition<TStateBase, *>>,
 
     val stateProcessor: StateProcessor<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>
 ) {
@@ -45,8 +43,6 @@ class Vertex<
         >(
         private val state: TStateBase
     ) {
-        private val transitions = mutableMapOf<TEventBase, StateTransition<TStateBase, *>>()
-
         private val typeBasedEventTransitions = mutableMapOf<Class<out TEventBase>, StateTransition<TStateBase, *>>()
 
         private var arrivalBuildData: ArrivalBuilder.BuildData<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>? = null
@@ -61,11 +57,6 @@ class Vertex<
             typeBasedEventTransitions[clazz] = buildTransition(fn)
         }
 
-        fun <TEvent : TEventBase> on(event: TEvent, fn: TransitionsBuilder<TStateBase, TEvent>.() -> Unit) {
-            require(event !in transitions) { "you may only register each event once per state" }
-            transitions[event] = buildTransition(fn)
-        }
-
         fun uponArrival(fn: ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit) {
             val builder = ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>()
             builder.fn()
@@ -74,8 +65,7 @@ class Vertex<
 
         fun build() = Vertex<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>(
             state = state,
-            transitions = transitions,
-            typeBasedEventTransitions = typeBasedEventTransitions,
+            transitions = typeBasedEventTransitions,
             stateProcessor = StateProcessor(
                 onArrival = arrivalBuildData?.onArrival,
                 eventsToPropagate = arrivalBuildData?.eventsToPropagate ?: emptySet(),

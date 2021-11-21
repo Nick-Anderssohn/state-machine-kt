@@ -88,6 +88,9 @@ class EtlTest {
                 }
             }
 
+            // TODO: Should be able to move these type parameters off of state and put
+            //  them on uponArrival instead.
+
             state<TransformedData, Unit>(State.Loading) {
                 uponArrival {
                     extractInputFromExtendedState { it!!.transformedData!! }

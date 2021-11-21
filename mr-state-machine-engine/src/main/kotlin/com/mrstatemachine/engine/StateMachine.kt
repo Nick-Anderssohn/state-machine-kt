@@ -23,8 +23,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> pri
 
     // Todo: What are we going to do with failures?
     suspend fun <TEvent : TEventBase> processEvent(event: TEvent) {
-        val transition = currentVertex.transitions[event]
-            ?: currentVertex.typeBasedEventTransitions[event::class.java]
+        val transition = currentVertex.transitions[event::class.java]
             ?: return
 
         val nextVertex = vertices[transition.next]

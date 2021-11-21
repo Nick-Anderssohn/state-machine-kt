@@ -32,14 +32,14 @@ class LightBulbTest {
             startingState(State.LightOff)
 
             state<Unit, Unit>(State.LightOff) {
-                on(Event.OnClicked) {
+                on<Event.OnClicked> {
                     execute(turnLightOn)
                     transitionTo(State.LightOn)
                 }
             }
 
             state<Unit, Unit>(State.LightOn) {
-                on(Event.OffClicked) {
+                on<Event.OffClicked> {
                     execute(turnLightOff)
                     transitionTo(State.LightOff)
                 }
