@@ -1,35 +1,55 @@
 package com.mrstatemachine.engine
 
-import com.mrstatemachine.StateProcessor
+import com.mrstatemachine.Extractor
+import com.mrstatemachine.Merger
+import com.mrstatemachine.NoOpMerger
 
-class Vertex<TStateBase : Any, TEventBase : Any>(
+class Vertex<
+    TStateBase : Any,
+    TExtendedState : Any,
+    TEventBase : Any,
+    TArrivalInput : Any,
+    TArrivalOutput : Any
+    >(
     val state: TStateBase,
 
     val transitions: Map<TEventBase, StateTransition<TStateBase, *>>,
 
     val typeBasedEventTransitions: Map<Class<out TEventBase>, StateTransition<TStateBase, *>>,
 
-    val stateProcessor: StateProcessor<TStateBase>?
+    val stateProcessor: StateProcessor<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>
 ) {
     companion object {
-        operator fun <TStateBase : Any, TEventBase : Any> invoke(
+        operator fun <
+            TStateBase : Any,
+            TEventBase : Any,
+            TExtendedState : Any,
+            TArrivalInput : Any,
+            TArrivalOutput : Any
+            > invoke(
             state: TStateBase,
-            fn: Builder<TStateBase, TEventBase>.() -> Unit
-        ): Vertex<TStateBase, TEventBase> {
-            val builder = Builder<TStateBase, TEventBase>(state)
+            fn: Builder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit
+        ): Vertex<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput> {
+            val builder = Builder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>(state)
             builder.fn()
             return builder.build()
         }
     }
 
-    class Builder<TStateBase : Any, TEventBase : Any>(
+    class Builder<
+        TStateBase : Any,
+        TExtendedState : Any,
+        TEventBase : Any,
+        TArrivalInput : Any,
+        TArrivalOutput : Any
+        >(
         private val state: TStateBase
     ) {
         private val transitions = mutableMapOf<TEventBase, StateTransition<TStateBase, *>>()
 
         private val typeBasedEventTransitions = mutableMapOf<Class<out TEventBase>, StateTransition<TStateBase, *>>()
 
-        private var arrivalBuildData: ArrivalBuilder.BuildData<TStateBase>? = null
+        private var arrivalBuildData: ArrivalBuilder.BuildData<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>? = null
 
         inline fun <reified TEvent : TEventBase> on(noinline fn: TransitionsBuilder<TStateBase, TEvent>.() -> Unit) {
             on(TEvent::class.java, fn)
@@ -46,19 +66,21 @@ class Vertex<TStateBase : Any, TEventBase : Any>(
             transitions[event] = buildTransition(fn)
         }
 
-        fun uponArrival(fn: ArrivalBuilder<TStateBase>.() -> Unit) {
-            val builder = ArrivalBuilder<TStateBase>()
+        fun uponArrival(fn: ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit) {
+            val builder = ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>()
             builder.fn()
             arrivalBuildData = builder.build()
         }
 
-        fun build() = Vertex<TStateBase, TEventBase>(
+        fun build() = Vertex<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>(
             state = state,
             transitions = transitions,
             typeBasedEventTransitions = typeBasedEventTransitions,
             stateProcessor = StateProcessor(
                 onArrival = arrivalBuildData?.onArrival,
-                postArrivalNextState = arrivalBuildData?.postArrivalNextState
+                eventsToPropagate = arrivalBuildData?.eventsToPropagate ?: emptySet(),
+                merger = arrivalBuildData?.merger ?: NoOpMerger(),
+                extractor = arrivalBuildData?.extractor
             )
         )
 
@@ -69,22 +91,39 @@ class Vertex<TStateBase : Any, TEventBase : Any>(
             .buildStateTransition()
     }
 
-    class ArrivalBuilder<TStateBase : Any> {
-        private val result = BuildData<TStateBase>()
+    class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any, TInput : Any, TOutput : Any> {
+        private val result = BuildData<TStateBase, TExtendedState, TEventBase, TInput, TOutput>()
 
-        fun run(fn: suspend () -> Unit) {
+        fun execute(fn: suspend (input: TInput) -> TOutput) {
             this.result.onArrival = fn
         }
 
-        fun afterRunTransitionTo(next: TStateBase?) {
-            this.result.postArrivalNextState = next
+        inline fun <reified TEvent : TEventBase> propagateEvent() {
+            propagateEvent(TEvent::class.java)
+        }
+
+        @PublishedApi
+        internal fun <TEvent : TEventBase> propagateEvent(clazz: Class<TEvent>) {
+            this.result.eventsToPropagate.add(clazz)
+        }
+
+        // todo: something more dsl-like?
+        fun storeExecutionOutput(merger: Merger<TOutput, TExtendedState>?) {
+            result.merger = merger
+        }
+
+        // todo: something more dsl-like?
+        fun extractInputFromExtendedState(extractor: Extractor<TInput, TExtendedState>?) {
+            result.extractor = extractor
         }
 
         fun build() = result
 
-        data class BuildData<TStateBase : Any>(
-            var postArrivalNextState: TStateBase? = null,
-            var onArrival: (suspend () -> Unit)? = null
+        data class BuildData<TStateBase : Any, TExtendedState : Any, TEventBase : Any, TInput : Any, TOutput : Any,>(
+            var eventsToPropagate: MutableSet<Class<out TEventBase>> = mutableSetOf(),
+            var onArrival: (suspend (input: TInput) -> TOutput)? = null,
+            var merger: Merger<TOutput, TExtendedState>? = null,
+            var extractor: Extractor<TInput, TExtendedState>? = null
         )
     }
 }

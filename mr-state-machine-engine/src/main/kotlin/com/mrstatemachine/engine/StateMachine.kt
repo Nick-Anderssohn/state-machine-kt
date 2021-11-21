@@ -2,22 +2,22 @@ package com.mrstatemachine.engine
 
 import com.mrstatemachine.TransitionTask
 
-class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
-    private val startingState: TStateBase,
-    private val vertices: Map<TStateBase, Vertex<TStateBase, TEventBase>>
+class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> private constructor(
+    private val stateStore: StateStore<TStateBase, TExtendedState>,
+    private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase, *, *>>
 ) {
     companion object {
-        operator fun <TStateBase : Any, TEventBase : Any> invoke(
-            fn: Builder<TStateBase, TEventBase>.() -> Unit
-        ): StateMachine<TStateBase, TEventBase> {
-            val builder = Builder<TStateBase, TEventBase>()
+        operator fun <TStateBase : Any, TExtendedState : Any, TEventBase : Any> invoke(
+            fn: Builder<TStateBase, TExtendedState, TEventBase>.() -> Unit
+        ): StateMachine<TStateBase, TExtendedState, TEventBase> {
+            val builder = Builder<TStateBase, TExtendedState, TEventBase>()
             builder.fn()
             return builder.build()
         }
     }
 
     @Volatile
-    var currentVertex: Vertex<TStateBase, TEventBase> = requireNotNull(vertices[startingState]) {
+    var currentVertex: Vertex<TStateBase, TExtendedState, TEventBase, *, *> = requireNotNull(vertices[stateStore.currentState]) {
         "no configuration exists for starting state"
     }
 
@@ -35,31 +35,55 @@ class StateMachine<TStateBase : Any, TEventBase : Any> private constructor(
 
         currentVertex = nextVertex!!
 
-        nextVertex.stateProcessor?.onArrival?.invoke()
+        val newExtendedState = currentVertex.stateProcessor.arrive(stateStore.extendedState)
 
-        // Todo: Should we do something if none of the current vertices can handle the provided event?
+        if (newExtendedState != null) {
+            stateStore.extendedState = newExtendedState
+        }
+
+        if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {
+            processEvent(event)
+        }
     }
 
-    class Builder<TStateBase : Any, TEventBase : Any> {
+    class Builder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {
         private lateinit var acceptingState: TStateBase
-        private val vertices: MutableMap<TStateBase, Vertex<TStateBase, TEventBase>> = mutableMapOf()
+        private var acceptingExtendedState: TExtendedState? = null
+        private val vertices: MutableMap<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase, *, *>> = mutableMapOf()
 
         fun startingState(value: TStateBase) {
             require(!this::acceptingState.isInitialized) {
-                "state machine can only have one starting state!"
+                "state machine can only have one starting state"
             }
 
             this.acceptingState = value
         }
 
-        fun state(state: TStateBase, fn: Vertex.Builder<TStateBase, TEventBase>.() -> Unit) {
+        fun startingExtendedState(value: TExtendedState) {
+            require(acceptingExtendedState == null) {
+                "state machine can only have one starting extended state"
+            }
+
+            this.acceptingExtendedState = value
+        }
+
+        fun <TArrivalInput : Any, TArrivalOutput : Any> state(
+            state: TStateBase,
+            fn: Vertex.Builder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit
+        ) {
             require(state !in vertices) {
-                "each state may only be defined once"
+                "each state may only be defined once per state machine"
             }
 
             vertices[state] = Vertex(state, fn)
         }
 
-        fun build() = StateMachine<TStateBase, TEventBase>(acceptingState, vertices)
+        fun build() = StateMachine<TStateBase, TExtendedState, TEventBase>(
+            StateStore(
+                currentState = acceptingState,
+                extendedState = acceptingExtendedState
+            ),
+            vertices
+        )
     }
 }
