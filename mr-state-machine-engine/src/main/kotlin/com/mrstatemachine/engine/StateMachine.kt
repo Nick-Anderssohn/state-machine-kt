@@ -1,16 +1,23 @@
 package com.mrstatemachine.engine
 
 import com.mrstatemachine.TransitionTask
+import com.mrstatemachine.dsl.StateMachineBuilder
 
-class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> private constructor(
+class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor(
     internal val stateStore: StateStore<TStateBase, TExtendedState>,
     private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase, *, *>>
 ) {
     companion object {
+        /**
+         * As a general rule-of-thumb, you don't want to create a circular imports
+         * between packages, but this is an okay exception to that rule. Builders
+         * are frequently declared as inner classes anyways; it's just nice
+         * organization-wise to separate out the DSL into its own package.
+         */
         operator fun <TStateBase : Any, TExtendedState : Any, TEventBase : Any> invoke(
-            fn: Builder<TStateBase, TExtendedState, TEventBase>.() -> Unit
+            fn: StateMachineBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit
         ): StateMachine<TStateBase, TExtendedState, TEventBase> {
-            val builder = Builder<TStateBase, TExtendedState, TEventBase>()
+            val builder = StateMachineBuilder<TStateBase, TExtendedState, TEventBase>()
             builder.fn()
             return builder.build()
         }
@@ -29,6 +36,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> pri
         val nextVertex = vertices[transition.next]
 
         if (transition.task != null) {
+            @Suppress("UNCHECKED_CAST")
             (transition.task as TransitionTask<TEvent>).run(event)
         }
 
@@ -43,46 +51,5 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> pri
         if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {
             processEvent(event)
         }
-    }
-
-    class Builder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {
-        private lateinit var acceptingState: TStateBase
-        private var acceptingExtendedState: TExtendedState? = null
-        private val vertices: MutableMap<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase, *, *>> = mutableMapOf()
-
-        fun startingState(value: TStateBase) {
-            require(!this::acceptingState.isInitialized) {
-                "state machine can only have one starting state"
-            }
-
-            this.acceptingState = value
-        }
-
-        fun startingExtendedState(value: TExtendedState) {
-            require(acceptingExtendedState == null) {
-                "state machine can only have one starting extended state"
-            }
-
-            this.acceptingExtendedState = value
-        }
-
-        fun <TArrivalInput : Any, TArrivalOutput : Any> state(
-            state: TStateBase,
-            fn: Vertex.Builder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit
-        ) {
-            require(state !in vertices) {
-                "each state may only be defined once per state machine"
-            }
-
-            vertices[state] = Vertex(state, fn)
-        }
-
-        fun build() = StateMachine<TStateBase, TExtendedState, TEventBase>(
-            StateStore(
-                currentState = acceptingState,
-                extendedState = acceptingExtendedState
-            ),
-            vertices
-        )
     }
 }
