@@ -10,6 +10,7 @@ import com.mrstatemachine.engine.StateStore
 import com.mrstatemachine.engine.StateTransition
 import com.mrstatemachine.engine.Vertex
 
+@StateMachineDslMarker
 class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {
     private lateinit var acceptingState: TStateBase
     private var acceptingExtendedState: TExtendedState? = null
@@ -65,10 +66,8 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         > VertexBuilder<TStateBase, TExtendedState, TEventBase, *, TFirstArrivalOutput>.then(
         state: TStateBase
     ) {
-        this.uponArrival {
-            on<TEvent> {
-                transitionTo(state)
-            }
+        on<TEvent> {
+            transitionTo(state)
         }
     }
 
@@ -79,23 +78,12 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         > VertexBuilder<TStateBase, TExtendedState, TEventBase, *, TFirstArrivalOutput>.then(
         state: TStateBase,
         noinline fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, TFirstArrivalOutput, TSecondArrivalOutput>.() -> Unit
-    ) = this.then(state, TEvent::class.java, fn)
-
-    @PublishedApi
-    internal fun <
-        TFirstArrivalOutput : Any,
-        TSecondArrivalOutput : Any,
-        TEvent : TEventBase
-        > VertexBuilder<TStateBase, TExtendedState, TEventBase, *, TFirstArrivalOutput>.then(
-        state: TStateBase,
-        eventClass: Class<TEvent>,
-        fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, TFirstArrivalOutput, TSecondArrivalOutput>.() -> Unit
     ): VertexBuilder<TStateBase, TExtendedState, TEventBase, TFirstArrivalOutput, TSecondArrivalOutput> {
         this.uponArrival {
-            propagateEvent(eventClass)
+            propagateEvent(TEvent::class.java)
         }
 
-        this.on(eventClass) {
+        this.on(TEvent::class.java) {
             transitionTo(state)
         }
 
@@ -112,6 +100,7 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
     )
 }
 
+@StateMachineDslMarker
 class VertexBuilder<
     TStateBase : Any,
     TExtendedState : Any,
@@ -120,6 +109,8 @@ class VertexBuilder<
     TArrivalOutput : Any
     >internal constructor(
     private val state: TStateBase,
+
+    @PublishedApi
     internal var useOutputFromPreviousVertexAsInput: Boolean
 ) {
     private val transitions = mutableMapOf<Class<out TEventBase>, StateTransition<TStateBase, *>>()
@@ -173,6 +164,7 @@ class VertexBuilder<
     }
 }
 
+@StateMachineDslMarker
 class ArrivalBuilder<
     TStateBase : Any,
     TExtendedState : Any,
@@ -215,6 +207,7 @@ class ArrivalBuilder<
     )
 }
 
+@StateMachineDslMarker
 class TransitionBuilder<TStateBase : Any, TEvent : Any>internal constructor() {
     private var nextState: TStateBase? = null
 
