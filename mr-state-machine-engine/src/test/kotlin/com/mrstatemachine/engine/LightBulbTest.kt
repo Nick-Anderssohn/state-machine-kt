@@ -31,14 +31,14 @@ class LightBulbTest {
         val stateMachine = StateMachine<State, Unit, Event> {
             startingState(State.LightOff)
 
-            state<Unit, Unit>(State.LightOff) {
+            simpleStateHandler(State.LightOff) {
                 on<Event.OnClicked> {
                     execute(turnLightOn)
                     transitionTo(State.LightOn)
                 }
             }
 
-            state<Unit, Unit>(State.LightOn) {
+            simpleStateHandler(State.LightOn) {
                 on<Event.OffClicked> {
                     execute(turnLightOff)
                     transitionTo(State.LightOff)

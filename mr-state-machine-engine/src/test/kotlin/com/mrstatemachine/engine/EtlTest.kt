@@ -40,13 +40,13 @@ class EtlTest {
         val etl = StateMachine<State, Unit, Event> {
             startingState(State.Waiting)
 
-            state<Unit, Unit>(State.Waiting) {
+            simpleStateHandler(State.Waiting) {
                 on<Event.Run> {
                     transitionTo(State.Extracting)
                 }
             }
 
-            state<Unit, ExtractedData>(State.Extracting) {
+            stateHandler<Unit, ExtractedData>(State.Extracting) {
                 uponArrival {
                     extractInputFromExtendedState {}
 
@@ -97,13 +97,13 @@ class EtlTest {
         val etl = StateMachine<State, ExtendedState, Event> {
             startingState(State.Waiting)
 
-            state<Unit, Unit>(State.Waiting) {
+            stateHandler<Unit, Unit>(State.Waiting) {
                 on<Event.Run> {
                     transitionTo(State.Extracting)
                 }
             }
 
-            state<Unit, ExtractedData>(State.Extracting) {
+            stateHandler<Unit, ExtractedData>(State.Extracting) {
                 uponArrival {
                     extractInputFromExtendedState {}
 
@@ -124,7 +124,7 @@ class EtlTest {
                 }
             }
 
-            state<ExtractedData, TransformedData>(State.Transforming) {
+            stateHandler<ExtractedData, TransformedData>(State.Transforming) {
                 uponArrival {
                     extractInputFromExtendedState { it!!.extractedData!! }
 
@@ -145,7 +145,7 @@ class EtlTest {
                 }
             }
 
-            state<TransformedData, Unit>(State.Loading) {
+            stateHandler<TransformedData, Unit>(State.Loading) {
                 uponArrival {
                     extractInputFromExtendedState { it!!.transformedData!! }
 

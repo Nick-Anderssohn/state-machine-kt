@@ -40,7 +40,12 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         this.acceptingExtendedState = value
     }
 
-    fun <TArrivalInput : Any, TArrivalOutput : Any> state(
+    fun simpleStateHandler(
+        state: TStateBase,
+        fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, Unit, Unit>.() -> Unit
+    ): VertexBuilder<TStateBase, TExtendedState, TEventBase, Unit, Unit> = stateHandler<Unit, Unit>(state, fn)
+
+    fun <TArrivalInput : Any, TArrivalOutput : Any> stateHandler(
         state: TStateBase,
         fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit
     ): VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput> {
@@ -87,7 +92,7 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
             transitionTo(state)
         }
 
-        return this@StateMachineBuilder.state<TFirstArrivalOutput, TSecondArrivalOutput>(state, fn)
+        return this@StateMachineBuilder.stateHandler<TFirstArrivalOutput, TSecondArrivalOutput>(state, fn)
             .apply { useOutputFromPreviousVertexAsInput = true }
     }
 
