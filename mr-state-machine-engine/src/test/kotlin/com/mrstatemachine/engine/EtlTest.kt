@@ -48,8 +48,6 @@ class EtlTest {
 
             stateHandler<Unit, ExtractedData>(State.Extracting) {
                 uponArrival {
-                    extractInputFromExtendedState {}
-
                     execute {
                         println("retrieving data...")
                         ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}")

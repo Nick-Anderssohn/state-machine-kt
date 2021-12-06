@@ -9,12 +9,15 @@ import com.mrstatemachine.engine.StateProcessor
 import com.mrstatemachine.engine.StateStore
 import com.mrstatemachine.engine.StateTransition
 import com.mrstatemachine.engine.Vertex
+import com.mrstatemachine.engine.applyIf
 
 @StateMachineDslMarker
 class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {
     private lateinit var acceptingState: TStateBase
     private var acceptingExtendedState: TExtendedState? = null
-    private val vertexBuilders: MutableMap<TStateBase, VertexBuilder<TStateBase, TExtendedState, TEventBase, *, *>> = mutableMapOf()
+
+    @PublishedApi
+    internal val vertexBuilders: MutableMap<TStateBase, VertexBuilder<TStateBase, TExtendedState, TEventBase, *, *>> = mutableMapOf()
 
     companion object {
         operator fun <TStateBase : Any, TExtendedState : Any, TEventBase : Any> invoke(
@@ -40,12 +43,12 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         this.acceptingExtendedState = value
     }
 
-    fun simpleStateHandler(
+    inline fun simpleStateHandler(
         state: TStateBase,
         fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, Unit, Unit>.() -> Unit
     ): VertexBuilder<TStateBase, TExtendedState, TEventBase, Unit, Unit> = stateHandler<Unit, Unit>(state, fn)
 
-    fun <TArrivalInput : Any, TArrivalOutput : Any> stateHandler(
+    inline fun <reified TArrivalInput : Any, reified TArrivalOutput : Any> stateHandler(
         state: TStateBase,
         fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit
     ): VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput> {
@@ -58,6 +61,11 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
             useOutputFromPreviousVertexAsInput = false
         )
             .apply(fn)
+            .applyIf(TArrivalInput::class == Unit::class) {
+                uponArrival {
+                    extractInputFromExtendedState { Unit as TArrivalInput }
+                }
+            }
 
         vertexBuilders[state] = vertexBuilder
 
@@ -77,8 +85,8 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
     }
 
     inline fun <
-        TFirstArrivalOutput : Any,
-        TSecondArrivalOutput : Any,
+        reified TFirstArrivalOutput : Any,
+        reified TSecondArrivalOutput : Any,
         reified TEvent : TEventBase
         > VertexBuilder<TStateBase, TExtendedState, TEventBase, *, TFirstArrivalOutput>.then(
         state: TStateBase,
@@ -112,7 +120,7 @@ class VertexBuilder<
     TEventBase : Any,
     TArrivalInput : Any,
     TArrivalOutput : Any
-    >internal constructor(
+    >@PublishedApi internal constructor(
     private val state: TStateBase,
 
     @PublishedApi
