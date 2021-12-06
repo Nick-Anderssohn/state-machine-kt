@@ -187,12 +187,10 @@ class ArrivalBuilder<
         this.result.eventsToPropagate.add(clazz)
     }
 
-    // todo: something more dsl-like?
     fun storeExecutionOutput(merger: Merger<TOutput, TExtendedState>?) {
         result.merger = merger
     }
 
-    // todo: something more dsl-like?
     fun extractInputFromExtendedState(extractor: Extractor<TInput, TExtendedState>?) {
         result.extractor = extractor
     }
