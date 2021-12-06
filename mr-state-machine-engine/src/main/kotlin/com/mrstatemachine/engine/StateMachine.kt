@@ -47,8 +47,9 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
 
         if (arrivalResult.newExtendedState != null) {
             stateStore.extendedState = arrivalResult.newExtendedState
-            stateStore.vertexToMostRecentOutput[currentVertex] = arrivalResult.output
         }
+
+        stateStore.vertexToMostRecentOutput[currentVertex] = arrivalResult.output
 
         if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {
             processEvent(event)

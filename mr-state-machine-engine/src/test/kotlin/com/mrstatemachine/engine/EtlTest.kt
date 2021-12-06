@@ -37,7 +37,7 @@ class EtlTest {
     fun `etl state machine runs completely when defined using then`() {
         var loadedData: TransformedData? = null
 
-        val etl = StateMachine<State, ExtendedState, Event> {
+        val etl = StateMachine<State, Unit, Event> {
             startingState(State.Waiting)
 
             state<Unit, Unit>(State.Waiting) {
@@ -53,10 +53,6 @@ class EtlTest {
                     execute {
                         println("retrieving data...")
                         ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}")
-                    }
-
-                    storeExecutionOutput { extractedData, extendedState ->
-                        (extendedState ?: ExtendedState()).copy(extractedData = extractedData)
                     }
                 }
             }
@@ -74,10 +70,6 @@ class EtlTest {
                             println("uploading data...")
                             loadedData = transformedData
                         }
-
-                        storeExecutionOutput { _, _ ->
-                            ExtendedState()
-                        }
                     }
                 }
                 .then<Unit, Unit, Event.Run>(State.Waiting)
@@ -94,7 +86,7 @@ class EtlTest {
 
         with(etl.stateStore) {
             currentState shouldBe State.Waiting
-            extendedState shouldBe ExtendedState()
+            extendedState shouldBe null
         }
     }
 
