@@ -182,8 +182,7 @@ class ArrivalBuilder<
         propagateEvent(TEvent::class.java)
     }
 
-    @PublishedApi
-    internal fun <TEvent : TEventBase> propagateEvent(clazz: Class<TEvent>) {
+    fun <TEvent : TEventBase> propagateEvent(clazz: Class<TEvent>) {
         this.result.eventsToPropagate.add(clazz)
     }
 
