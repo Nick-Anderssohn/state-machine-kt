@@ -186,11 +186,11 @@ class ArrivalBuilder<
         this.result.eventsToPropagate.add(clazz)
     }
 
-    fun storeExecutionOutput(merger: Merger<TOutput, TExtendedState>?) {
+    fun storeExecutionOutput(merger: Merger<TOutput, TExtendedState>) {
         result.merger = merger
     }
 
-    fun extractInputFromExtendedState(extractor: Extractor<TInput, TExtendedState>?) {
+    fun extractInputFromExtendedState(extractor: Extractor<TInput, TExtendedState>) {
         result.extractor = extractor
     }
 
