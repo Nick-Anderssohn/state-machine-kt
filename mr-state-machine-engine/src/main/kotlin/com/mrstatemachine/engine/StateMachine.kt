@@ -40,12 +40,14 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
             (transition.task as TransitionTask<TEvent>).run(event)
         }
 
+        val previousOutput = stateStore.vertexToMostRecentOutput[currentVertex]
         currentVertex = nextVertex!!
 
-        val newExtendedState = currentVertex.stateProcessor.arrive(stateStore.extendedState)
+        val arrivalResult = currentVertex.stateProcessor.arrive(stateStore.extendedState, previousOutput)
 
-        if (newExtendedState != null) {
-            stateStore.extendedState = newExtendedState
+        if (arrivalResult.newExtendedState != null) {
+            stateStore.extendedState = arrivalResult.newExtendedState
+            stateStore.vertexToMostRecentOutput[currentVertex] = arrivalResult.output
         }
 
         if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {

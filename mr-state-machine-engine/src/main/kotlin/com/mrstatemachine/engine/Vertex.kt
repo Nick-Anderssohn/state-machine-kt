@@ -1,6 +1,6 @@
 package com.mrstatemachine.engine
 
-class Vertex<
+data class Vertex<
     TStateBase : Any,
     TExtendedState : Any,
     TEventBase : Any,

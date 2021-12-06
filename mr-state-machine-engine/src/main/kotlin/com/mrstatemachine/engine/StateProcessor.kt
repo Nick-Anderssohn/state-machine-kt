@@ -12,23 +12,36 @@ class StateProcessor<TStateBase : Any, TExtendedState : Any, TEventBase : Any, T
     //  extended state class. Or a wrapper around the user defined extended state.
     val merger: Merger<TOutput, TExtendedState>,
     val extractor: Extractor<TInput, TExtendedState>?,
-
-    val eventsToPropagate: Set<Class<out TEventBase>> = emptySet()
+    val eventsToPropagate: Set<Class<out TEventBase>> = emptySet(),
+    val useOutputFromPreviousVertexAsInput: Boolean
 ) {
     init {
-        require(onArrival != null && extractor != null || onArrival == null) {
+        require(onArrival != null && (extractor != null || useOutputFromPreviousVertexAsInput) || onArrival == null) {
             "if onArrival is defined then there must also be an extractor defined"
         }
     }
 
-    internal suspend fun arrive(extendedState: TExtendedState?): TExtendedState? {
+    internal suspend fun arrive(extendedState: TExtendedState?, previousVertexOutput: Any?): ArrivalResult<TExtendedState, TOutput> {
         if (onArrival == null) {
-            return extendedState
+            return ArrivalResult(extendedState, null)
         }
 
-        val input = extractor!!.extract(extendedState)
+        val input = if (useOutputFromPreviousVertexAsInput) {
+            @Suppress("UNCHECKED_CAST")
+            previousVertexOutput as TInput
+        } else {
+            extractor!!.extract(extendedState)
+        }
+
         val output = onArrival.invoke(input)
 
-        return merger.merge(output, extendedState)
+        val newExtendedState = merger.merge(output, extendedState)
+
+        return ArrivalResult(newExtendedState, output)
     }
+
+    data class ArrivalResult<TExtendedState : Any, TOutput : Any>(
+        val newExtendedState: TExtendedState?,
+        val output: TOutput?
+    )
 }

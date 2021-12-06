@@ -13,7 +13,7 @@ import com.mrstatemachine.engine.Vertex
 class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {
     private lateinit var acceptingState: TStateBase
     private var acceptingExtendedState: TExtendedState? = null
-    private val vertices: MutableMap<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase, *, *>> = mutableMapOf()
+    private val vertexBuilders: MutableMap<TStateBase, VertexBuilder<TStateBase, TExtendedState, TEventBase, *, *>> = mutableMapOf()
 
     companion object {
         operator fun <TStateBase : Any, TExtendedState : Any, TEventBase : Any> invoke(
@@ -42,22 +42,73 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
     fun <TArrivalInput : Any, TArrivalOutput : Any> state(
         state: TStateBase,
         fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit
-    ) {
-        require(state !in vertices) {
+    ): VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput> {
+        require(state !in vertexBuilders) {
             "each state may only be defined once per state machine"
         }
 
-        vertices[state] = VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>(state)
+        val vertexBuilder = VertexBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>(
+            state = state,
+            useOutputFromPreviousVertexAsInput = false
+        )
             .apply(fn)
-            .build()
+
+        vertexBuilders[state] = vertexBuilder
+
+        return vertexBuilder
+    }
+
+    inline fun <
+        TFirstArrivalOutput : Any,
+        TSecondArrivalOutput : Any,
+        reified TEvent : TEventBase
+        > VertexBuilder<TStateBase, TExtendedState, TEventBase, *, TFirstArrivalOutput>.then(
+        state: TStateBase
+    ) {
+        this.uponArrival {
+            on<TEvent> {
+                transitionTo(state)
+            }
+        }
+    }
+
+    inline fun <
+        TFirstArrivalOutput : Any,
+        TSecondArrivalOutput : Any,
+        reified TEvent : TEventBase
+        > VertexBuilder<TStateBase, TExtendedState, TEventBase, *, TFirstArrivalOutput>.then(
+        state: TStateBase,
+        noinline fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, TFirstArrivalOutput, TSecondArrivalOutput>.() -> Unit
+    ) = this.then(state, TEvent::class.java, fn)
+
+    @PublishedApi
+    internal fun <
+        TFirstArrivalOutput : Any,
+        TSecondArrivalOutput : Any,
+        TEvent : TEventBase
+        > VertexBuilder<TStateBase, TExtendedState, TEventBase, *, TFirstArrivalOutput>.then(
+        state: TStateBase,
+        eventClass: Class<TEvent>,
+        fn: VertexBuilder<TStateBase, TExtendedState, TEventBase, TFirstArrivalOutput, TSecondArrivalOutput>.() -> Unit
+    ): VertexBuilder<TStateBase, TExtendedState, TEventBase, TFirstArrivalOutput, TSecondArrivalOutput> {
+        this.uponArrival {
+            propagateEvent(eventClass)
+        }
+
+        this.on(eventClass) {
+            transitionTo(state)
+        }
+
+        return this@StateMachineBuilder.state<TFirstArrivalOutput, TSecondArrivalOutput>(state, fn)
+            .apply { useOutputFromPreviousVertexAsInput = true }
     }
 
     fun build() = StateMachine<TStateBase, TExtendedState, TEventBase>(
-        StateStore(
+        stateStore = StateStore(
             currentState = acceptingState,
             extendedState = acceptingExtendedState
         ),
-        vertices
+        vertices = vertexBuilders.map { it.key to it.value.build() }.toMap()
     )
 }
 
@@ -68,11 +119,12 @@ class VertexBuilder<
     TArrivalInput : Any,
     TArrivalOutput : Any
     >internal constructor(
-    private val state: TStateBase
+    private val state: TStateBase,
+    internal var useOutputFromPreviousVertexAsInput: Boolean
 ) {
     private val transitions = mutableMapOf<Class<out TEventBase>, StateTransition<TStateBase, *>>()
 
-    private var arrivalBuildData: ArrivalBuilder.BuildData<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>? = null
+    private var arrivalBuilder: ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>? = null
 
     inline fun <reified TEvent : TEventBase> on(noinline fn: TransitionBuilder<TStateBase, TEvent>.() -> Unit) {
         on(TEvent::class.java, fn)
@@ -91,25 +143,34 @@ class VertexBuilder<
     }
 
     fun uponArrival(fn: ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>.() -> Unit) {
-        val builder = ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>()
-        builder.fn()
-        arrivalBuildData = builder.build()
+        arrivalBuilder = if (arrivalBuilder == null) {
+            ArrivalBuilder<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>()
+        } else {
+            arrivalBuilder
+        }
+
+        arrivalBuilder!!.fn()
     }
 
     /**
      * Safe to call multiple times and make multiple copies of the vertex.
      * This is assuming that [state] is completely immutable.
      */
-    fun build() = Vertex<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>(
-        state = state,
-        transitions = transitions,
-        stateProcessor = StateProcessor(
-            onArrival = arrivalBuildData?.onArrival,
-            eventsToPropagate = arrivalBuildData?.eventsToPropagate ?: emptySet(),
-            merger = arrivalBuildData?.merger ?: NoOpMerger(),
-            extractor = arrivalBuildData?.extractor
+    fun build(): Vertex<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput> {
+        val arrivalBuildData = arrivalBuilder?.build()
+
+        return Vertex<TStateBase, TExtendedState, TEventBase, TArrivalInput, TArrivalOutput>(
+            state = state,
+            transitions = transitions,
+            stateProcessor = StateProcessor(
+                onArrival = arrivalBuildData?.onArrival,
+                eventsToPropagate = arrivalBuildData?.eventsToPropagate ?: emptySet(),
+                merger = arrivalBuildData?.merger ?: NoOpMerger(),
+                extractor = arrivalBuildData?.extractor,
+                useOutputFromPreviousVertexAsInput = useOutputFromPreviousVertexAsInput
+            )
         )
-    )
+    }
 }
 
 class ArrivalBuilder<

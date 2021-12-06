@@ -34,7 +34,74 @@ class EtlTest {
     private val gson = Gson()
 
     @Test
-    fun `etl state machine runs completely`() {
+    fun `etl state machine runs completely when defined using then`() {
+        var loadedData: TransformedData? = null
+
+        val etl = StateMachine<State, ExtendedState, Event> {
+            startingState(State.Waiting)
+
+            state<Unit, Unit>(State.Waiting) {
+                on<Event.Run> {
+                    transitionTo(State.Extracting)
+                }
+            }
+
+            state<Unit, ExtractedData>(State.Extracting) {
+                uponArrival {
+                    extractInputFromExtendedState {}
+
+                    execute {
+                        println("retrieving data...")
+                        ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}")
+                    }
+
+                    storeExecutionOutput { extractedData, extendedState ->
+                        (extendedState ?: ExtendedState()).copy(extractedData = extractedData)
+                    }
+
+                    propagateEvent<Event.Run>()
+                }
+            }
+                .then<ExtractedData, TransformedData, Event.Run>(State.Transforming) {
+                    uponArrival {
+                        execute { extractedData ->
+                            println("transforming data...")
+                            gson.fromJson(extractedData.raw)
+                        }
+                    }
+                }
+                .then<TransformedData, Unit, Event.Run>(State.Loading) {
+                    uponArrival {
+                        execute { transformedData ->
+                            println("uploading data...")
+                            loadedData = transformedData
+                        }
+
+                        storeExecutionOutput { _, _ ->
+                            ExtendedState()
+                        }
+                    }
+                }
+                .then<Unit, Unit, Event.Run>(State.Waiting)
+        }
+
+        runBlocking {
+            etl.processEvent(Event.Run)
+        }
+
+        loadedData shouldBe TransformedData(
+            foo = "I'm foo!",
+            bar = "I'm bar!"
+        )
+
+        with(etl.stateStore) {
+            currentState shouldBe State.Waiting
+            extendedState shouldBe ExtendedState()
+        }
+    }
+
+    @Test
+    fun `etl state machine runs completely when defined using propagateEvent`() {
         var loadedData: TransformedData? = null
 
         val etl = StateMachine<State, ExtendedState, Event> {
@@ -122,10 +189,10 @@ class EtlTest {
             bar = "I'm bar!"
         )
 
-        etl.stateStore shouldBe StateStore(
-            currentState = State.Waiting,
-            extendedState = ExtendedState()
-        )
+        with(etl.stateStore) {
+            currentState shouldBe State.Waiting
+            extendedState shouldBe ExtendedState()
+        }
     }
 }
 
