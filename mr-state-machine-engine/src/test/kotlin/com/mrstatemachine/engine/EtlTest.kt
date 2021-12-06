@@ -58,8 +58,6 @@ class EtlTest {
                     storeExecutionOutput { extractedData, extendedState ->
                         (extendedState ?: ExtendedState()).copy(extractedData = extractedData)
                     }
-
-                    propagateEvent<Event.Run>()
                 }
             }
                 .then<ExtractedData, TransformedData, Event.Run>(State.Transforming) {
@@ -154,9 +152,6 @@ class EtlTest {
                     transitionTo(State.Loading)
                 }
             }
-
-            // TODO: Should be able to move these type parameters off of state and put
-            //  them on uponArrival instead.
 
             state<TransformedData, Unit>(State.Loading) {
                 uponArrival {
