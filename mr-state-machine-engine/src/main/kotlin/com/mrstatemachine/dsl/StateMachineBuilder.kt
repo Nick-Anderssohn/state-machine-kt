@@ -151,14 +151,10 @@ class VertexBuilder<
 }
 
 @StateMachineDslMarker
-class ArrivalBuilder<
-    TStateBase : Any,
-    TExtendedState : Any,
-    TEventBase : Any
-    >internal constructor() {
+class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>internal constructor() {
     private val result = BuildData<TStateBase, TExtendedState, TEventBase>()
 
-    fun execute(fn: Action<TExtendedState>) {
+    fun execute(fn: Action<TEventBase, TExtendedState>) {
         this.result.onArrival = fn
     }
 
@@ -174,7 +170,7 @@ class ArrivalBuilder<
 
     data class BuildData<TStateBase : Any, TExtendedState : Any, TEventBase : Any>(
         var eventsToPropagate: MutableSet<Class<out TEventBase>> = mutableSetOf(),
-        var onArrival: Action<TExtendedState>? = null
+        var onArrival: Action<TEventBase, TExtendedState>? = null
     )
 }
 

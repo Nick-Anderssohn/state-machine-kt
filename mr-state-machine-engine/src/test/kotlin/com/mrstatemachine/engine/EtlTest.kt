@@ -48,7 +48,7 @@ class EtlTest {
 
             stateHandler(State.Extracting) {
                 uponArrival {
-                    execute {
+                    execute { _, _ ->
                         println("retrieving data...")
                         val extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}")
                         ExtendedState(extractedData = extractedData)
@@ -57,7 +57,7 @@ class EtlTest {
             }
                 .then<Event.Run>(State.Transforming) {
                     uponArrival {
-                        execute { extendedStateStore ->
+                        execute { _, extendedStateStore ->
                             val extendedState = extendedStateStore.extendedState
 
                             println("transforming data...")
@@ -69,7 +69,7 @@ class EtlTest {
                 }
                 .then<Event.Run>(State.Loading) {
                     uponArrival {
-                        execute { extendedStateStore ->
+                        execute { _, extendedStateStore ->
                             val extendedState = extendedStateStore.extendedState
 
                             println("uploading data...")
@@ -118,7 +118,7 @@ class EtlTest {
 
             stateHandler(State.Extracting) {
                 uponArrival {
-                    execute {
+                    execute { _, _ ->
                         println("retrieving data...")
                         ExtendedState(
                             extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}")
@@ -135,7 +135,7 @@ class EtlTest {
 
             stateHandler(State.Transforming) {
                 uponArrival {
-                    execute { extendedStateStore ->
+                    execute { _, extendedStateStore ->
                         println("transforming data...")
                         extendedStateStore.extendedState.copy(
                             transformedData = gson.fromJson<TransformedData>(
@@ -154,7 +154,7 @@ class EtlTest {
 
             stateHandler(State.Loading) {
                 uponArrival {
-                    execute { extendedStateStore ->
+                    execute { _, extendedStateStore ->
                         println("uploading data...")
                         loadedData = extendedStateStore.extendedState.transformedData
                         extendedStateStore.extendedState

@@ -42,7 +42,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
 
         currentVertex = nextVertex!!
 
-        currentVertex.arrive()
+        currentVertex.arrive(event)
 
         if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {
             processEvent(event)
