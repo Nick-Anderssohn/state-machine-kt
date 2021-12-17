@@ -25,7 +25,7 @@ class AlternativeLightBulbTest {
     fun `alternative light bulb state machine transitions correctly`() {
         val transitionRecords: MutableList<String> = mutableListOf()
 
-        val togglePower = TransitionTask<Event.PowerToggled, Unit> { event: Event.PowerToggled, extendedStateStore: ExtendedStateStore<Unit> ->
+        val togglePower = TransitionTask<Event.PowerToggled, Unit> { event: Event.PowerToggled, _ ->
             transitionRecords += when (event.newPosition) {
                 Position.ON -> "light on"
                 Position.OFF -> "light off"
