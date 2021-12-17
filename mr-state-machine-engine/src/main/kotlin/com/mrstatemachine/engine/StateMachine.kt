@@ -1,6 +1,5 @@
 package com.mrstatemachine.engine
 
-import com.mrstatemachine.TransitionTask
 import com.mrstatemachine.dsl.StateMachineBuilder
 
 class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor(
@@ -37,7 +36,10 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
 
         if (transition.task != null) {
             @Suppress("UNCHECKED_CAST")
-            (transition.task as TransitionTask<TEvent>).run(event)
+            val newExtendedState = (transition.task as TransitionTask<TEvent, TExtendedState>)
+                .invoke(event, stateStore.extendedStateStore)
+
+            stateStore.extendedStateStore._extendedState = newExtendedState
         }
 
         currentVertex = nextVertex!!

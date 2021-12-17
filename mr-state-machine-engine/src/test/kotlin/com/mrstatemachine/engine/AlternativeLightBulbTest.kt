@@ -1,6 +1,5 @@
 package com.mrstatemachine.engine
 
-import com.mrstatemachine.TransitionTask
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -26,7 +25,7 @@ class AlternativeLightBulbTest {
     fun `alternative light bulb state machine transitions correctly`() {
         val transitionRecords: MutableList<String> = mutableListOf()
 
-        val togglePower = TransitionTask<Event.PowerToggled> { event: Event.PowerToggled ->
+        val togglePower = TransitionTask<Event.PowerToggled, Unit> { event: Event.PowerToggled, extendedStateStore: ExtendedStateStore<Unit> ->
             transitionRecords += when (event.newPosition) {
                 Position.ON -> "light on"
                 Position.OFF -> "light off"
