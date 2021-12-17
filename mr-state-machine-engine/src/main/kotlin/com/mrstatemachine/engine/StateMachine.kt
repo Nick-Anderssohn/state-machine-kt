@@ -5,7 +5,7 @@ import com.mrstatemachine.dsl.StateMachineBuilder
 
 class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor(
     internal val stateStore: StateStore<TStateBase, TExtendedState>,
-    private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase, *, *>>
+    private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase>>,
 ) {
     companion object {
         /**
@@ -24,7 +24,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
     }
 
     @Volatile
-    var currentVertex: Vertex<TStateBase, TExtendedState, TEventBase, *, *> = requireNotNull(vertices[stateStore.currentState]) {
+    var currentVertex: Vertex<TStateBase, TExtendedState, TEventBase> = requireNotNull(vertices[stateStore.currentState]) {
         "no configuration exists for starting state"
     }
 
@@ -40,16 +40,9 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
             (transition.task as TransitionTask<TEvent>).run(event)
         }
 
-        val previousOutput = stateStore.vertexToMostRecentOutput[currentVertex]
         currentVertex = nextVertex!!
 
-        val arrivalResult = currentVertex.stateProcessor.arrive(stateStore.extendedState, previousOutput)
-
-        if (arrivalResult.newExtendedState != null) {
-            stateStore.extendedState = arrivalResult.newExtendedState
-        }
-
-        stateStore.vertexToMostRecentOutput[currentVertex] = arrivalResult.output
+        currentVertex.arrive()
 
         if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {
             processEvent(event)

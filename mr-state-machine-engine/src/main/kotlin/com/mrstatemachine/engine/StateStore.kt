@@ -1,12 +1,8 @@
 package com.mrstatemachine.engine
 
-internal data class StateStore<TStateBase : Any, TExtendedState : Any>(
+internal data class StateStore<TStateBase : Any, TExtendedState : Any> (
+    val extendedStateStore: ExtendedStateStore<TExtendedState>
+) {
     @Volatile
-    var currentState: TStateBase,
-
-    @Volatile
-    var extendedState: TExtendedState?,
-
-    val vertexToMostRecentOutput: MutableMap<Vertex<TStateBase, TExtendedState, *, *, *>, Any?> =
-        mutableMapOf<Vertex<TStateBase, TExtendedState, *, *, *>, Any?>()
-)
+    lateinit var currentState: TStateBase
+}
