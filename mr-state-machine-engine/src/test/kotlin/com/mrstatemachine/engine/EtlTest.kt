@@ -91,16 +91,14 @@ class EtlTest {
             bar = "I'm bar!"
         )
 
-        with(etl.stateStore) {
-            currentState shouldBe State.Waiting
-            extendedStateStore.extendedState shouldBe ExtendedState(
-                extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}"),
-                transformedData = TransformedData(
-                    foo = "I'm foo!",
-                    bar = "I'm bar!"
-                )
+        etl.currentState shouldBe State.Waiting
+        etl.stateStore.extendedStateStore.extendedState shouldBe ExtendedState(
+            extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}"),
+            transformedData = TransformedData(
+                foo = "I'm foo!",
+                bar = "I'm bar!"
             )
-        }
+        )
     }
 
     @Test
@@ -178,16 +176,14 @@ class EtlTest {
             bar = "I'm bar!"
         )
 
-        with(etl.stateStore) {
-            currentState shouldBe State.Waiting
-            extendedStateStore.extendedState shouldBe ExtendedState(
-                extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}"),
-                transformedData = TransformedData(
-                    foo = "I'm foo!",
-                    bar = "I'm bar!"
-                )
+        etl.currentState shouldBe State.Waiting
+        etl.stateStore.extendedStateStore.extendedState shouldBe ExtendedState(
+            extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}"),
+            transformedData = TransformedData(
+                foo = "I'm foo!",
+                bar = "I'm bar!"
             )
-        }
+        )
     }
 }
 

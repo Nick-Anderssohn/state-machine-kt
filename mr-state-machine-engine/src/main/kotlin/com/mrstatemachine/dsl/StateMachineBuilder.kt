@@ -11,15 +11,20 @@ import com.mrstatemachine.engine.Vertex
 
 @StateMachineDslMarker
 class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {
-    private var acceptingStateInitialized = false
+    private lateinit var acceptingState: TStateBase
     private lateinit var acceptingExtendedState: TExtendedState
 
     private val extendedStateStore = ExtendedStateStore<TExtendedState>()
 
+    private var superVertexBuilder: VertexBuilder<TStateBase, TExtendedState, TEventBase>? = null
+
     @PublishedApi
-    internal val stateStore = StateStore<TStateBase, TExtendedState>(
-        extendedStateStore = extendedStateStore
-    )
+    internal val stateStore by lazy {
+        StateStore<TStateBase, TExtendedState>(
+            acceptingState = acceptingState,
+            extendedStateStore = extendedStateStore
+        )
+    }
 
     @PublishedApi
     internal val vertexBuilders: MutableMap<TStateBase, VertexBuilder<TStateBase, TExtendedState, TEventBase>> = mutableMapOf()
@@ -31,12 +36,11 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
     }
 
     fun startingState(value: TStateBase) {
-        require(!acceptingStateInitialized) {
+        require(!this::acceptingState.isInitialized) {
             "state machine can only have one starting state"
         }
 
-        acceptingStateInitialized = true
-        this.stateStore.currentState = value
+        acceptingState = value
     }
 
     fun startingExtendedState(value: TExtendedState) {
@@ -47,7 +51,18 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         this.acceptingExtendedState = value
     }
 
-    inline fun stateHandler(
+    fun applyToAllStates(
+        fn: VertexBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit
+    ) {
+        check(superVertexBuilder == null) {
+            "can only call applyToAllStates once"
+        }
+
+        superVertexBuilder = VertexBuilder<TStateBase, TExtendedState, TEventBase>(null, stateStore)
+            .apply(fn)
+    }
+
+    fun stateHandler(
         state: TStateBase,
         fn: VertexBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit
     ): VertexBuilder<TStateBase, TExtendedState, TEventBase> {
@@ -88,7 +103,9 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
 
     fun build() = StateMachine<TStateBase, TExtendedState, TEventBase>(
         stateStore = stateStore,
-        vertices = vertexBuilders.map { it.key to it.value.build() }.toMap()
+        vertices = vertexBuilders.map { it.key to it.value.build() }.toMap(),
+        superVertex = superVertexBuilder?.build()
+            ?: VertexBuilder<TStateBase, TExtendedState, TEventBase>(null, stateStore).build()
     )
 }
 
@@ -98,7 +115,7 @@ class VertexBuilder<
     TExtendedState : Any,
     TEventBase : Any
     >@PublishedApi internal constructor(
-    private val state: TStateBase,
+    private val state: TStateBase?,
     private val stateStore: StateStore<TStateBase, TExtendedState>
 ) {
     private val transitions = mutableMapOf<Class<out TEventBase>, StateTransition<TStateBase, TExtendedState, *>>()
@@ -116,7 +133,7 @@ class VertexBuilder<
     ) {
         require(eventClass !in transitions) { "you may only register each event once per state" }
 
-        transitions[eventClass] = TransitionBuilder<TStateBase, TExtendedState, TEvent>(state)
+        transitions[eventClass] = TransitionBuilder<TStateBase, TExtendedState, TEvent>()
             .apply(fn)
             .build()
     }
@@ -175,9 +192,7 @@ class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>in
 }
 
 @StateMachineDslMarker
-class TransitionBuilder<TStateBase : Any, TExtendedState : Any, TEvent : Any>internal constructor(
-    private val currentState: TStateBase
-) {
+class TransitionBuilder<TStateBase : Any, TExtendedState : Any, TEvent : Any>internal constructor() {
     private var nextState: TStateBase? = null
 
     private var task: TransitionTask<TEvent, TExtendedState>? = null
@@ -199,7 +214,7 @@ class TransitionBuilder<TStateBase : Any, TExtendedState : Any, TEvent : Any>int
     }
 
     internal fun build(): StateTransition<TStateBase, TExtendedState, TEvent> = StateTransition(
-        next = checkNotNull(nextState),
+        next = nextState,
         task = task
     )
 }

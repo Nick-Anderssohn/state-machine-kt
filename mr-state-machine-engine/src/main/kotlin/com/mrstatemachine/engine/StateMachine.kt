@@ -2,10 +2,17 @@ package com.mrstatemachine.engine
 
 import com.mrstatemachine.dsl.StateMachineBuilder
 
-class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor(
+class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor (
     internal val stateStore: StateStore<TStateBase, TExtendedState>,
     private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase>>,
+    private val superVertex: Vertex<TStateBase, TExtendedState, TEventBase>
 ) {
+    // Will never be null since currentVertex will never be superVertex,
+    // which is the only one that is allowed to have a null state.
+    val currentState get() = currentVertex.state!!
+
+    val currentExtendedState get() = stateStore.extendedStateStore.extendedState
+
     companion object {
         /**
          * As a general rule-of-thumb, you don't want to create a circular imports
@@ -23,16 +30,17 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
     }
 
     @Volatile
-    var currentVertex: Vertex<TStateBase, TExtendedState, TEventBase> = requireNotNull(vertices[stateStore.currentState]) {
+    var currentVertex: Vertex<TStateBase, TExtendedState, TEventBase> = requireNotNull(vertices[stateStore.acceptingState]) {
         "no configuration exists for starting state"
     }
 
     // Todo: What are we going to do with failures?
     suspend fun <TEvent : TEventBase> processEvent(event: TEvent) {
         val transition = currentVertex.transitions[event::class.java]
+            ?: superVertex.transitions[event::class.java]
             ?: return
 
-        val nextVertex = vertices[transition.next]
+        val nextVertex = vertices[transition.next ?: currentState]
 
         if (transition.task != null) {
             @Suppress("UNCHECKED_CAST")
@@ -44,9 +52,13 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
 
         currentVertex = nextVertex!!
 
-        currentVertex.arrive(event)
+        stateStore.extendedStateStore._extendedState = currentVertex.arrive(event)
+            ?: superVertex.arrive(event)
+            ?: stateStore.extendedStateStore.extendedState
 
         if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {
+            processEvent(event)
+        } else if (event::class.java in superVertex.stateProcessor.eventsToPropagate) {
             processEvent(event)
         }
     }
