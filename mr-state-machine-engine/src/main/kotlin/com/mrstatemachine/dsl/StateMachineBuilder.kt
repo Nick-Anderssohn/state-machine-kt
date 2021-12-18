@@ -81,6 +81,10 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
     inline fun <reified TEvent : TEventBase> VertexBuilder<TStateBase, TExtendedState, TEventBase>.then(
         state: TStateBase
     ) {
+        uponArrival {
+            propagateEvent<TEvent>()
+        }
+
         on<TEvent> {
             transitionTo(state)
         }
@@ -175,6 +179,7 @@ class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>in
         this.result.onArrival = fn
     }
 
+    @PublishedApi
     internal inline fun <reified TEvent : TEventBase> propagateEvent() {
         propagateEvent(TEvent::class.java)
     }
