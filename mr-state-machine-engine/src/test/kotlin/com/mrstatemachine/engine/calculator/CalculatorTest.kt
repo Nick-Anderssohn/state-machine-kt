@@ -21,10 +21,7 @@ class CalculatorTest {
                 transitionTo(State.Operand1)
 
                 // Clear whenever On/C is clicked
-                execute { _, _ ->
-                    println("YOOOOOO")
-                    ExtendedState()
-                }
+                execute { _, _ -> ExtendedState() }
             }
 
             on<Event.OffClicked> {
@@ -85,6 +82,66 @@ class CalculatorTest {
 
         calculator.currentState shouldBe State.Operand1
         calculator.currentExtendedState shouldBe ExtendedState(operand1 = "489")
+    }
+
+    @Test
+    fun `calculator double addition test 1`() = runBlocking {
+        calculator.processEvents("4.20 + 69 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "73.2")
+    }
+
+    @Test
+    fun `calculator double addition test 2`() = runBlocking {
+        calculator.processEvents("420 + 6.9 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "426.9")
+    }
+
+    @Test
+    fun `calculator double addition test 3`() = runBlocking {
+        calculator.processEvents("420.420 + 6.9 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "427.32")
+    }
+
+    @Test
+    fun `calculator multiplication test`() = runBlocking {
+        calculator.processEvents("420 * 69 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "28980")
+    }
+
+    @Test
+    fun `calculator division test`() = runBlocking {
+        calculator.processEvents("420 / 69 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "6.086956521739131")
+    }
+
+    @Test
+    fun `calculator subtraction test`() = runBlocking {
+        calculator.processEvents("420 - 69 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "351")
+    }
+
+    @Test
+    fun `calculator multiple operations test`() = runBlocking {
+        // Keep in mind the string is a stream of events to our old-school
+        // calculator state machine, so 420 - 69 happens first, not 69 * 2.
+        // (The string thing is just to make testing easier, not intended
+        // to be a part of the calculator)
+        calculator.processEvents("420 - 69 * 2 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "702")
     }
 
     private suspend fun StateMachine<State, ExtendedState, Event>.processEvents(input: String) {
