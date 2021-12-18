@@ -152,12 +152,12 @@ class VertexBuilder<
         arrivalBuilder!!.fn()
     }
 
-    /**
-     * Safe to call multiple times and make multiple copies of the vertex.
-     * This is assuming that [state] is completely immutable.
-     */
     fun build(): Vertex<TStateBase, TExtendedState, TEventBase> {
         val arrivalBuildData = arrivalBuilder?.build()
+
+        require(state != null || arrivalBuildData?.eventsToPropagate.isNullOrEmpty()) {
+            "cannot call propagateEvent from with applyToAllStates (it would create an infinite loop)"
+        }
 
         return Vertex<TStateBase, TExtendedState, TEventBase>(
             state = state,

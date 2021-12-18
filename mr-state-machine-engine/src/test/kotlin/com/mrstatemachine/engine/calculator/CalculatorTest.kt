@@ -16,6 +16,8 @@ class CalculatorTest {
     val calculator = StateMachine<State, ExtendedState, Event> {
         startingState(State.Off)
 
+        startingExtendedState(ExtendedState())
+
         applyToAllStates {
             on<Event.OnCClicked> {
                 transitionTo(State.Operand1)

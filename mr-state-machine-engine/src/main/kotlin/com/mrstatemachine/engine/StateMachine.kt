@@ -15,7 +15,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
 
     companion object {
         /**
-         * As a general rule-of-thumb, you don't want to create a circular imports
+         * As a general rule-of-thumb, you don't want to create circular imports
          * between packages, but this is an okay exception to that rule. Builders
          * are frequently declared as inner classes anyways; it's just nice
          * organization-wise to separate out the DSL into its own package.
