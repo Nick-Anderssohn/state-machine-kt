@@ -40,7 +40,7 @@ sealed class Operands(
             stateStore.extendedState.compute().copy(operator = event.operator)
         }
 
-        val handleEquals = TransitionTask<Event.EqualsClicked, ExtendedState> { event, stateStore ->
+        val handleEquals = TransitionTask<Event.EqualsClicked, ExtendedState> { _, stateStore ->
             stateStore.extendedState.compute()
         }
 
