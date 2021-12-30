@@ -16,6 +16,9 @@ class CalculatorTest {
      * This is kind of the equivalent diagram - we skip over the "opEntered" state shown
      * in that diagram though:
      * https://en.wikipedia.org/wiki/UML_state_machine#/media/File:UML_state_machine_Fig2a.png
+     *
+     * TODO: Add in the "opEntered" state and utilize uponArrival so we can handle negatives.
+     *  Or use a guard and don't add another state. Whatever man.
      */
     private val calculator = StateMachine<State, ExtendedState, Event> {
         startingState(State.Off)
