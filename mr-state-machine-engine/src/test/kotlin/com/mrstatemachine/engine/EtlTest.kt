@@ -38,7 +38,7 @@ class EtlTest {
     private val gson = Gson()
 
     @Test
-    fun `etl state machine runs completely when defined using then`() {
+    fun `etl state machine runs completely`() {
         var loadedData: TransformedData? = null
 
         val etl = StateMachine<State, ExtendedState, Event> {
@@ -97,8 +97,6 @@ class EtlTest {
 
                         println("uploading data...")
                         loadedData = extendedState.transformedData
-
-                        extendedState
 
                         ActionResult(
                             extendedState = extendedState,

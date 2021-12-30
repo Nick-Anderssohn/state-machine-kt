@@ -47,7 +47,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
             val newExtendedState = (transition.task as TransitionTask<TEvent, TExtendedState>)
                 .invoke(event, stateStore.extendedStateStore)
 
-            stateStore.extendedStateStore._extendedState = newExtendedState
+            stateStore.extendedStateStore.extState = newExtendedState
         }
 
         currentVertex = nextVertex!!
@@ -56,7 +56,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
             ?: superVertex.arrive(event)
             ?: ActionResult(stateStore.extendedStateStore.extendedState)
 
-        stateStore.extendedStateStore._extendedState = result.extendedState
+        stateStore.extendedStateStore.extState = result.extendedState
 
         result.eventToTrigger?.let { processEvent(it) }
     }

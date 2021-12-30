@@ -20,7 +20,7 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
 
     @PublishedApi
     internal val stateStore by lazy {
-        StateStore<TStateBase, TExtendedState>(
+        StateStore(
             acceptingState = acceptingState,
             extendedStateStore = extendedStateStore
         )
@@ -78,7 +78,7 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         return vertexBuilder
     }
 
-    fun build() = StateMachine<TStateBase, TExtendedState, TEventBase>(
+    fun build() = StateMachine(
         stateStore = stateStore,
         vertices = vertexBuilders.map { it.key to it.value.build() }.toMap(),
         superVertex = superVertexBuilder?.build()
@@ -117,7 +117,7 @@ class VertexBuilder<
 
     fun uponArrival(fn: ArrivalBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit) {
         arrivalBuilder = if (arrivalBuilder == null) {
-            ArrivalBuilder<TStateBase, TExtendedState, TEventBase>()
+            ArrivalBuilder()
         } else {
             arrivalBuilder
         }
@@ -128,7 +128,7 @@ class VertexBuilder<
     fun build(): Vertex<TStateBase, TExtendedState, TEventBase> {
         val arrivalBuildData = arrivalBuilder?.build()
 
-        return Vertex<TStateBase, TExtendedState, TEventBase>(
+        return Vertex(
             state = state,
             transitions = transitions,
             stateProcessor = StateProcessor(
@@ -141,7 +141,7 @@ class VertexBuilder<
 
 @StateMachineDslMarker
 class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>internal constructor() {
-    private val result = BuildData<TStateBase, TExtendedState, TEventBase>()
+    private val result = BuildData<TExtendedState, TEventBase>()
 
     fun execute(fn: Action<TEventBase, TExtendedState>) {
         this.result.onArrival = fn
@@ -149,7 +149,7 @@ class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>in
 
     fun build() = result
 
-    data class BuildData<TStateBase : Any, TExtendedState : Any, TEventBase : Any>(
+    data class BuildData<TExtendedState : Any, TEventBase : Any>(
         var onArrival: Action<TEventBase, TExtendedState>? = null
     )
 }

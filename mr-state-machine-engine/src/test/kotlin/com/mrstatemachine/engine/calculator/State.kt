@@ -3,7 +3,6 @@ package com.mrstatemachine.engine.calculator
 sealed class State {
     object Off : State()
     object Operand1 : State()
-    object OpEntered : State()
     object Operand2 : State()
 }
 

@@ -13,7 +13,7 @@ class CalculatorTest {
         private val SUPPORTED_OPERATORS = setOf('+', '-', '*', '/')
     }
 
-    val calculator = StateMachine<State, ExtendedState, Event> {
+    private val calculator = StateMachine<State, ExtendedState, Event> {
         startingState(State.Off)
 
         startingExtendedState(ExtendedState())
