@@ -40,9 +40,9 @@ class CalculatorTest {
             }
         }
 
-        stateHandler(State.Off) { /* Doesn't do anything different than the defaults defined in applyToAllStates */ }
+        stateDefinition(State.Off) { /* Doesn't do anything different than the defaults defined in applyToAllStates */ }
 
-        stateHandler(State.Operand1) {
+        stateDefinition(State.Operand1) {
             on<Event.NumClicked> {
                 execute(Operands.First.handleNumber)
             }
@@ -58,7 +58,7 @@ class CalculatorTest {
             }
         }
 
-        stateHandler(State.Operand2) {
+        stateDefinition(State.Operand2) {
             on<Event.NumClicked> {
                 execute(Operands.Second.handleNumber)
             }

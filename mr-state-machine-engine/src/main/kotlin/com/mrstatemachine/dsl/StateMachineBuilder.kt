@@ -62,7 +62,7 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
             .apply(fn)
     }
 
-    fun stateHandler(
+    fun stateDefinition(
         state: TStateBase,
         fn: VertexBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit
     ): VertexBuilder<TStateBase, TExtendedState, TEventBase> {

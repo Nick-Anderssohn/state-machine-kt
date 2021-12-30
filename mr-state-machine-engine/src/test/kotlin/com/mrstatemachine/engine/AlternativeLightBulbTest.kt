@@ -35,14 +35,14 @@ class AlternativeLightBulbTest {
         val stateMachine = StateMachine<State, Unit, Event> {
             startingState(State.LightOff)
 
-            stateHandler(State.LightOff) {
+            stateDefinition(State.LightOff) {
                 on<Event.PowerToggled> {
                     execute(togglePower)
                     transitionTo(State.LightOn)
                 }
             }
 
-            stateHandler(State.LightOn) {
+            stateDefinition(State.LightOn) {
                 on<Event.PowerToggled> {
                     execute(togglePower)
                     transitionTo(State.LightOff)

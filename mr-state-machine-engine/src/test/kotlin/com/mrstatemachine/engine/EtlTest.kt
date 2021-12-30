@@ -1,7 +1,6 @@
 package com.mrstatemachine.engine
 
 import com.google.gson.Gson
-import com.mrstatemachine.engine.calculator.ExtendedState
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -44,7 +43,7 @@ class EtlTest {
         val etl = StateMachine<State, ExtendedState, Event> {
             startingState(State.Waiting)
 
-            stateHandler(State.Waiting) {
+            stateDefinition(State.Waiting) {
                 on<Event.Run> {
                     transitionTo(State.Extracting)
 
@@ -52,7 +51,7 @@ class EtlTest {
                 }
             }
 
-            stateHandler(State.Extracting) {
+            stateDefinition(State.Extracting) {
                 uponArrival {
                     execute { _, _ ->
                         println("retrieving data...")
@@ -70,7 +69,7 @@ class EtlTest {
                 }
             }
 
-            stateHandler(State.Transforming) {
+            stateDefinition(State.Transforming) {
                 uponArrival {
                     execute { _, extendedStateStore ->
                         val extendedState = extendedStateStore.extendedState
@@ -90,7 +89,7 @@ class EtlTest {
                 }
             }
 
-            stateHandler(State.Loading) {
+            stateDefinition(State.Loading) {
                 uponArrival {
                     execute { _, extendedStateStore ->
                         val extendedState = extendedStateStore.extendedState
