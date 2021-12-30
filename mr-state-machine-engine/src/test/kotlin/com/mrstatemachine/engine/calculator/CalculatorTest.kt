@@ -7,12 +7,16 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.lang.IllegalArgumentException
 
-// https://en.wikipedia.org/wiki/UML_state_machine#/media/File:UML_state_machine_Fig2a.png
 class CalculatorTest {
     companion object {
         private val SUPPORTED_OPERATORS = setOf('+', '-', '*', '/')
     }
 
+    /**
+     * This is kind of the equivalent diagram - we skip over the "opEntered" state shown
+     * in that diagram though:
+     * https://en.wikipedia.org/wiki/UML_state_machine#/media/File:UML_state_machine_Fig2a.png
+     */
     private val calculator = StateMachine<State, ExtendedState, Event> {
         startingState(State.Off)
 
