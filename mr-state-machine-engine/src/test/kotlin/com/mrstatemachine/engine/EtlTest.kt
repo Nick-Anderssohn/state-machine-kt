@@ -18,6 +18,9 @@ data class TransformedData(
 class EtlTest {
     sealed class Event {
         object Run : Event()
+        object ExtractionSuccessful : Event()
+        object TransformationSuccessful : Event()
+        object LoadingSuccessful : Event()
     }
 
     sealed class State {
@@ -54,82 +57,15 @@ class EtlTest {
                     execute { _, _ ->
                         println("retrieving data...")
                         val extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}")
-                        ExtendedState(extractedData = extractedData)
-                    }
-                }
-            }
-                .then<Event.Run>(State.Transforming) {
-                    uponArrival {
-                        execute { _, extendedStateStore ->
-                            val extendedState = extendedStateStore.extendedState
 
-                            println("transforming data...")
-                            val transformedData = gson.fromJson<TransformedData>(extendedState.extractedData!!.raw)
-
-                            extendedState.copy(transformedData = transformedData)
-                        }
-                    }
-                }
-                .then<Event.Run>(State.Loading) {
-                    uponArrival {
-                        execute { _, extendedStateStore ->
-                            val extendedState = extendedStateStore.extendedState
-
-                            println("uploading data...")
-                            loadedData = extendedState.transformedData
-
-                            extendedState
-                        }
-                    }
-                }
-                .then<Event.Run>(State.Waiting)
-        }
-
-        runBlocking {
-            etl.processEvent(Event.Run)
-        }
-
-        loadedData shouldBe TransformedData(
-            foo = "I'm foo!",
-            bar = "I'm bar!"
-        )
-
-        etl.currentState shouldBe State.Waiting
-        etl.stateStore.extendedStateStore.extendedState shouldBe ExtendedState(
-            extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}"),
-            transformedData = TransformedData(
-                foo = "I'm foo!",
-                bar = "I'm bar!"
-            )
-        )
-    }
-
-    @Test
-    fun `etl state machine runs completely when defined using propagateEvent`() {
-        var loadedData: TransformedData? = null
-
-        val etl = StateMachine<State, ExtendedState, Event> {
-            startingState(State.Waiting)
-
-            stateHandler(State.Waiting) {
-                on<Event.Run> {
-                    transitionTo(State.Extracting)
-                }
-            }
-
-            stateHandler(State.Extracting) {
-                uponArrival {
-                    execute { _, _ ->
-                        println("retrieving data...")
-                        ExtendedState(
-                            extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}")
+                        ActionResult(
+                            extendedState = ExtendedState(extractedData = extractedData),
+                            eventToTrigger = Event.ExtractionSuccessful
                         )
                     }
-
-                    propagateEvent<Event.Run>()
                 }
 
-                on<Event.Run> {
+                on<Event.ExtractionSuccessful> {
                     transitionTo(State.Transforming)
                 }
             }
@@ -137,18 +73,19 @@ class EtlTest {
             stateHandler(State.Transforming) {
                 uponArrival {
                     execute { _, extendedStateStore ->
+                        val extendedState = extendedStateStore.extendedState
+
                         println("transforming data...")
-                        extendedStateStore.extendedState.copy(
-                            transformedData = gson.fromJson<TransformedData>(
-                                extendedStateStore.extendedState.extractedData!!.raw
-                            )
+                        val transformedData = gson.fromJson<TransformedData>(extendedState.extractedData!!.raw)
+
+                        ActionResult(
+                            extendedState = extendedState.copy(transformedData = transformedData),
+                            eventToTrigger = Event.TransformationSuccessful
                         )
                     }
-
-                    propagateEvent<Event.Run>()
                 }
 
-                on<Event.Run> {
+                on<Event.TransformationSuccessful> {
                     transitionTo(State.Loading)
                 }
             }
@@ -156,15 +93,21 @@ class EtlTest {
             stateHandler(State.Loading) {
                 uponArrival {
                     execute { _, extendedStateStore ->
-                        println("uploading data...")
-                        loadedData = extendedStateStore.extendedState.transformedData
-                        extendedStateStore.extendedState
-                    }
+                        val extendedState = extendedStateStore.extendedState
 
-                    propagateEvent<Event.Run>()
+                        println("uploading data...")
+                        loadedData = extendedState.transformedData
+
+                        extendedState
+
+                        ActionResult(
+                            extendedState = extendedState,
+                            eventToTrigger = Event.LoadingSuccessful
+                        )
+                    }
                 }
 
-                on<Event.Run> {
+                on<Event.LoadingSuccessful> {
                     transitionTo(State.Waiting)
                 }
             }

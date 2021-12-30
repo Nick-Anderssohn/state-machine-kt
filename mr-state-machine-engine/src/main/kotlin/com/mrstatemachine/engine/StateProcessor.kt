@@ -1,11 +1,10 @@
 package com.mrstatemachine.engine
 
-internal class StateProcessor<TStateBase : Any, TExtendedState : Any, in TEventBase : Any>internal constructor(
+internal class StateProcessor<TStateBase : Any, TExtendedState : Any, TEventBase : Any>internal constructor(
     private val stateStore: StateStore<TStateBase, TExtendedState>,
-    private val onArrival: Action<TEventBase, TExtendedState>? = null,
-    val eventsToPropagate: Set<Class<*>> = emptySet()
+    private val onArrival: Action<TEventBase, TExtendedState>? = null
 ) {
-    internal suspend fun arrive(event: TEventBase): TExtendedState? {
+    internal suspend fun arrive(event: TEventBase): ActionResult<TEventBase, TExtendedState>? {
         return onArrival?.invoke(event, stateStore.extendedStateStore)
     }
 }

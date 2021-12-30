@@ -78,33 +78,6 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         return vertexBuilder
     }
 
-    inline fun <reified TEvent : TEventBase> VertexBuilder<TStateBase, TExtendedState, TEventBase>.then(
-        state: TStateBase
-    ) {
-        uponArrival {
-            propagateEvent<TEvent>()
-        }
-
-        on<TEvent> {
-            transitionTo(state)
-        }
-    }
-
-    inline fun <reified TEvent : TEventBase> VertexBuilder<TStateBase, TExtendedState, TEventBase>.then(
-        state: TStateBase,
-        noinline fn: VertexBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit
-    ): VertexBuilder<TStateBase, TExtendedState, TEventBase> {
-        this.uponArrival {
-            propagateEvent(TEvent::class.java)
-        }
-
-        this.on(TEvent::class.java) {
-            transitionTo(state)
-        }
-
-        return this@StateMachineBuilder.stateHandler(state, fn)
-    }
-
     fun build() = StateMachine<TStateBase, TExtendedState, TEventBase>(
         stateStore = stateStore,
         vertices = vertexBuilders.map { it.key to it.value.build() }.toMap(),
@@ -155,17 +128,12 @@ class VertexBuilder<
     fun build(): Vertex<TStateBase, TExtendedState, TEventBase> {
         val arrivalBuildData = arrivalBuilder?.build()
 
-        require(state != null || arrivalBuildData?.eventsToPropagate.isNullOrEmpty()) {
-            "cannot call propagateEvent from with applyToAllStates (it would create an infinite loop)"
-        }
-
         return Vertex<TStateBase, TExtendedState, TEventBase>(
             state = state,
             transitions = transitions,
             stateProcessor = StateProcessor(
                 stateStore = stateStore,
-                onArrival = arrivalBuildData?.onArrival,
-                eventsToPropagate = arrivalBuildData?.eventsToPropagate ?: emptySet()
+                onArrival = arrivalBuildData?.onArrival
             )
         )
     }
@@ -179,19 +147,9 @@ class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>in
         this.result.onArrival = fn
     }
 
-    @PublishedApi
-    internal inline fun <reified TEvent : TEventBase> propagateEvent() {
-        propagateEvent(TEvent::class.java)
-    }
-
-    fun <TEvent : TEventBase> propagateEvent(clazz: Class<TEvent>) {
-        this.result.eventsToPropagate.add(clazz)
-    }
-
     fun build() = result
 
     data class BuildData<TStateBase : Any, TExtendedState : Any, TEventBase : Any>(
-        var eventsToPropagate: MutableSet<Class<out TEventBase>> = mutableSetOf(),
         var onArrival: Action<TEventBase, TExtendedState>? = null
     )
 }

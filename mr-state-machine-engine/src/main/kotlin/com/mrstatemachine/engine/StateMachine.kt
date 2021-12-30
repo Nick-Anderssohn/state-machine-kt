@@ -52,14 +52,12 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
 
         currentVertex = nextVertex!!
 
-        stateStore.extendedStateStore._extendedState = currentVertex.arrive(event)
+        val result = currentVertex.arrive(event)
             ?: superVertex.arrive(event)
-            ?: stateStore.extendedStateStore.extendedState
+            ?: ActionResult(stateStore.extendedStateStore.extendedState)
 
-        if (event::class.java in currentVertex.stateProcessor.eventsToPropagate) {
-            processEvent(event)
-        } else if (event::class.java in superVertex.stateProcessor.eventsToPropagate) {
-            processEvent(event)
-        }
+        stateStore.extendedStateStore._extendedState = result.extendedState
+
+        result.eventToTrigger?.let { processEvent(it) }
     }
 }
