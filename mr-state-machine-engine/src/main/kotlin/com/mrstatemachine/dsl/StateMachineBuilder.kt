@@ -3,7 +3,6 @@ package com.mrstatemachine.dsl
 import com.mrstatemachine.engine.Action
 import com.mrstatemachine.engine.ExtendedStateStore
 import com.mrstatemachine.engine.StateMachine
-import com.mrstatemachine.engine.StateProcessor
 import com.mrstatemachine.engine.StateStore
 import com.mrstatemachine.engine.StateTransition
 import com.mrstatemachine.engine.TransitionTask
@@ -131,10 +130,8 @@ class VertexBuilder<
         return Vertex(
             state = state,
             transitions = transitions,
-            stateProcessor = StateProcessor(
-                stateStore = stateStore,
-                onArrival = arrivalBuildData?.onArrival
-            )
+            stateStore = stateStore,
+            onArrival = arrivalBuildData?.onArrival
         )
     }
 }
