@@ -51,13 +51,13 @@ class AlternativeLightBulbTest {
         }
 
         runBlocking {
-            stateMachine.currentVertex.state shouldBe State.LightOff
+            stateMachine.currentState shouldBe State.LightOff
 
             stateMachine.processEvent(Event.PowerToggled(Position.ON))
 
             transitionRecords shouldBe mutableListOf("light on")
 
-            stateMachine.currentVertex.state shouldBe State.LightOn
+            stateMachine.currentState shouldBe State.LightOn
 
             stateMachine.processEvent(Event.PowerToggled(Position.OFF))
 
@@ -66,7 +66,7 @@ class AlternativeLightBulbTest {
                 "light off"
             )
 
-            stateMachine.currentVertex.state shouldBe State.LightOff
+            stateMachine.currentState shouldBe State.LightOff
         }
     }
 }

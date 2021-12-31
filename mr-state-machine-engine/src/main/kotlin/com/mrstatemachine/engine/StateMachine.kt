@@ -3,7 +3,7 @@ package com.mrstatemachine.engine
 import com.mrstatemachine.dsl.StateMachineBuilder
 
 class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor (
-    internal val stateStore: StateStore<TStateBase, TExtendedState>,
+    private val stateStore: StateStore<TStateBase, TExtendedState>,
     private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase>>,
     private val superVertex: Vertex<TStateBase, TExtendedState, TEventBase>
 ) {
@@ -30,7 +30,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
     }
 
     @Volatile
-    var currentVertex: Vertex<TStateBase, TExtendedState, TEventBase> = requireNotNull(vertices[stateStore.acceptingState]) {
+    private var currentVertex: Vertex<TStateBase, TExtendedState, TEventBase> = requireNotNull(vertices[stateStore.acceptingState]) {
         "no configuration exists for starting state"
     }
 

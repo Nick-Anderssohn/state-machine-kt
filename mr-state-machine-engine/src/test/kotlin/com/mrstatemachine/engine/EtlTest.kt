@@ -120,7 +120,7 @@ class EtlTest {
         )
 
         etl.currentState shouldBe State.Waiting
-        etl.stateStore.extendedStateStore.extendedState shouldBe ExtendedState(
+        etl.currentExtendedState shouldBe ExtendedState(
             extractedData = ExtractedData(raw = "{\"foo\": \"I'm foo!\",\"bar\": \"I'm bar!\"}"),
             transformedData = TransformedData(
                 foo = "I'm foo!",

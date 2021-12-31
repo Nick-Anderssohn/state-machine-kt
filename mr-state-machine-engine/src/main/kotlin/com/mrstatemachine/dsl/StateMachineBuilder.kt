@@ -124,7 +124,7 @@ class VertexBuilder<
         arrivalBuilder!!.fn()
     }
 
-    fun build(): Vertex<TStateBase, TExtendedState, TEventBase> {
+    internal fun build(): Vertex<TStateBase, TExtendedState, TEventBase> {
         val arrivalBuildData = arrivalBuilder?.build()
 
         return Vertex(
@@ -144,7 +144,7 @@ class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>in
         this.result.onArrival = fn
     }
 
-    fun build() = result
+    internal fun build() = result
 
     data class BuildData<TExtendedState : Any, TEventBase : Any>(
         var onArrival: Action<TEventBase, TExtendedState>? = null
