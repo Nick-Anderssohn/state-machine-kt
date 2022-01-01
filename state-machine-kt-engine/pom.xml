@@ -2,21 +2,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>mr-state-machine</artifactId>
-    <groupId>statemachinekt</groupId>
+    <groupId>com.statemachinekt</groupId>
+    <artifactId>state-machine-kt</artifactId>
     <version>0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>mr-state-machine-engine</artifactId>
+  <artifactId>state-machine-kt-engine</artifactId>
   <version>0.1-SNAPSHOT</version>
 
-  <name>mr-state-machine-engine</name>
-  <url>https://www.mrstatemachine.com</url>
+  <name>state-machine-kt-engine</name>
+  <url>https://www.statemachinekt.com</url>
 
   <dependencies>
     <dependency>
-      <groupId>statemachinekt</groupId>
-      <artifactId>mr-state-machine-interfaces</artifactId>
+      <groupId>com.statemachinekt</groupId>
+      <artifactId>state-machine-kt-interfaces</artifactId>
       <version>0.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>

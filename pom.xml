@@ -6,13 +6,13 @@
 
   <packaging>pom</packaging>
 
-  <groupId>statemachinekt</groupId>
-  <artifactId>mr-state-machine</artifactId>
+  <groupId>com.statemachinekt</groupId>
+  <artifactId>state-machine-kt</artifactId>
   <version>0.1-SNAPSHOT</version>
 
-  <name>mr-state-machine</name>
+  <name>state-machine-kt</name>
 
-  <url>https://www.mrstatemachine.com</url>
+  <url>https://www.statemachinekt.com</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -81,8 +81,8 @@
   </dependencies>
 
   <modules>
-    <module>mr-state-machine-interfaces</module>
-    <module>mr-state-machine-engine</module>
+    <module>state-machine-kt-interfaces</module>
+    <module>state-machine-kt-engine</module>
   </modules>
 
   <build>
