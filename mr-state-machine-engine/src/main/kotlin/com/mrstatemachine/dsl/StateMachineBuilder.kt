@@ -6,6 +6,7 @@ import com.mrstatemachine.engine.StateMachine
 import com.mrstatemachine.engine.StateStore
 import com.mrstatemachine.engine.StateTransition
 import com.mrstatemachine.engine.TransitionTask
+import com.mrstatemachine.engine.TransitionTaskResult
 import com.mrstatemachine.engine.Vertex
 
 @StateMachineDslMarker
@@ -13,12 +14,22 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
     private lateinit var acceptingState: TStateBase
     private lateinit var acceptingExtendedState: TExtendedState
 
-    private val extendedStateStore = ExtendedStateStore<TExtendedState>()
+    private val extendedStateStore by lazy {
+        check(this::acceptingExtendedState.isInitialized) {
+            "you must call startingExtendedState() towards the top of your state machine definition"
+        }
+
+        ExtendedStateStore<TExtendedState>(acceptingExtendedState)
+    }
 
     private var superVertexBuilder: VertexBuilder<TStateBase, TExtendedState, TEventBase>? = null
 
     @PublishedApi
     internal val stateStore by lazy {
+        check(this::acceptingState.isInitialized) {
+            "you must call startingState() towards the top of your state machine definition"
+        }
+
         StateStore(
             acceptingState = acceptingState,
             extendedStateStore = extendedStateStore
@@ -50,7 +61,7 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         this.acceptingExtendedState = value
     }
 
-    fun applyToAllStates(
+    fun applyToAllStateDefinitions(
         fn: VertexBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit
     ) {
         check(superVertexBuilder == null) {
@@ -155,7 +166,7 @@ class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>in
 class TransitionBuilder<TStateBase : Any, TExtendedState : Any, TEvent : Any>internal constructor() {
     private var nextState: TStateBase? = null
 
-    private var task: TransitionTask<TEvent, TExtendedState>? = null
+    private var task: TransitionTask<TEvent, TStateBase, TExtendedState>? = null
 
     fun transitionTo(nextState: TStateBase) {
         require(this.nextState == null) {
@@ -165,12 +176,23 @@ class TransitionBuilder<TStateBase : Any, TExtendedState : Any, TEvent : Any>int
         this.nextState = nextState
     }
 
-    fun execute(task: TransitionTask<TEvent, TExtendedState>?) {
+    fun execute(task: TransitionTask<TEvent, TStateBase, TExtendedState>?) {
         require(this.task == null) {
             "there can only be one task per transition"
         }
 
         this.task = task
+    }
+
+    fun execute(fn: (extendedStateStore: ExtendedStateStore<TExtendedState>) -> TExtendedState) {
+        execute { _, store ->
+            TransitionTaskResult(fn(store))
+        }
+    }
+
+    fun execute(fn: () -> Unit) = execute { _, store ->
+        fn()
+        TransitionTaskResult(store.extendedState)
     }
 
     internal fun build(): StateTransition<TStateBase, TExtendedState, TEvent> = StateTransition(

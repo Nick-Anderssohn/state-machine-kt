@@ -5,5 +5,5 @@ package com.mrstatemachine.engine
  */
 data class StateTransition<TStateBase : Any, TExtendedState : Any, in TEvent : Any> internal constructor(
     val next: TStateBase?,
-    val task: TransitionTask<TEvent, TExtendedState>?
+    val task: TransitionTask<TEvent, TStateBase, TExtendedState>?
 )

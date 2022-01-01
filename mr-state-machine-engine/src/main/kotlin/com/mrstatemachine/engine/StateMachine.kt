@@ -40,17 +40,16 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
             ?: superVertex.transitions[event::class.java]
             ?: return
 
-        val nextVertex = vertices[transition.next ?: currentState]
-
-        if (transition.task != null) {
+        val transitionResult = transition.task?.let {
             @Suppress("UNCHECKED_CAST")
-            val newExtendedState = (transition.task as TransitionTask<TEvent, TExtendedState>)
-                .invoke(event, stateStore.extendedStateStore)
-
-            stateStore.extendedStateStore.extState = newExtendedState
+            (transition.task as TransitionTask<TEvent, TStateBase, TExtendedState>).invoke(event, stateStore.extendedStateStore)
         }
 
-        currentVertex = nextVertex!!
+        stateStore.applyIf(transitionResult != null) {
+            this.extendedStateStore.extState = transitionResult!!.extendedState
+        }
+
+        currentVertex = vertices[transitionResult?.nextState ?: transition.next ?: currentState]!!
 
         val result = currentVertex.arrive(event)
             ?: superVertex.arrive(event)

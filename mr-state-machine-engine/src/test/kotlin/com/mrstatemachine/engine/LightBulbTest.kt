@@ -21,23 +21,18 @@ class LightBulbTest {
 
         val stateMachine = StateMachine<State, Unit, Event> {
             startingState(State.LightOff)
+            startingExtendedState(Unit)
 
             stateDefinition(State.LightOff) {
                 on<Event.OnClicked> {
-                    execute { _, _ ->
-                        transitionRecords += "light on"
-                    }
-
+                    execute { -> transitionRecords += "light on" }
                     transitionTo(State.LightOn)
                 }
             }
 
             stateDefinition(State.LightOn) {
                 on<Event.OffClicked> {
-                    execute { _, _ ->
-                        transitionRecords += "light off"
-                    }
-
+                    execute { -> transitionRecords += "light off" }
                     transitionTo(State.LightOff)
                 }
             }

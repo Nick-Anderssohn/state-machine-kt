@@ -13,33 +13,44 @@ class CalculatorTest {
     }
 
     /**
-     * This is kind of the equivalent diagram - we skip over the "opEntered" state shown
-     * in that diagram though:
-     * https://en.wikipedia.org/wiki/UML_state_machine#/media/File:UML_state_machine_Fig2a.png
+     * Imagine an old-school calculator that has these buttons:
+     *  "On/C" -> this button either turns the calculator on or clear it
+     *  "Off"  -> turns the calculator off
+     *  "+"    -> the plus sign
+     *  "-"    -> the minus sign, or designates a negative number if it is the
+     *            first button clicked when defining an operand.
+     *  "*"    -> the multiplication sign
+     *  "/"    -> the division sign
+     *  "="    -> computes the result
+     *  digits -> inputs the corresponding digit (e.x. the "1" button inputs a 1)
      *
-     * TODO: Add in the "opEntered" state and utilize uponArrival so we can handle negatives.
-     *  Or use a guard and don't add another state. Whatever man.
+     * If the calculator is currently empty, then numbers (or a negative sign) will be assigned to
+     * the first operand. Once an operator is hit, then the display clears, and you start defining
+     * the second operand. Then, if "=" is hit, the result is computed and set as the first operand.
+     * You can continue to append digits to that result if you want since it is now just being used as
+     * the first operand for your next equation. If "=" is not hit when defining the second operand
+     * and a different operator is hit instead, then the result is computed, set as the first operand,
+     * and you can start defining the second operand where the current operator is whatever you just hit.
      */
     private val calculator = StateMachine<State, ExtendedState, Event> {
         startingState(State.Off)
-
         startingExtendedState(ExtendedState())
 
-        applyToAllStates {
+        applyToAllStateDefinitions {
             on<Event.OnCClicked> {
                 transitionTo(State.Operand1)
 
                 // Clear whenever On/C is clicked
-                execute { _, _ -> ExtendedState() }
+                execute { _ -> ExtendedState() }
             }
 
             on<Event.OffClicked> {
                 transitionTo(State.Off)
 
                 // Clear the state when off is clicked too
-                // Yeah I know clicking on again would clear it anyways
+                // Yeah I know clicking on again would clear it anyways,
                 // but I'm simulating a real calculator okay lol
-                execute { _, _ -> ExtendedState() }
+                execute { _ -> ExtendedState() }
             }
         }
 
@@ -55,8 +66,12 @@ class CalculatorTest {
             }
 
             on<Event.OperatorClicked> {
-                // Doesn't support guards yet, so we can't handle negative numbers
-                transitionTo(State.Operand2)
+                // We don't have a transitionTo() call here because the nextState
+                // is specified in Operands.First.handleOperator's return value.
+                // This is done so that negative numbers can be handled.
+                // If we wanted to though, we could have a transitionTo() defined
+                // here that would act as the default if handleOperator returned
+                // null for nextState.
                 execute(Operands.First.handleOperator)
             }
         }
@@ -71,7 +86,8 @@ class CalculatorTest {
             }
 
             on<Event.OperatorClicked> {
-                transitionTo(State.Operand2)
+                // We don't have a transitionTo() call here because we want to just stay
+                // in the Operand2 state in this case.
                 execute(Operands.Second.handleOperator)
             }
 
@@ -151,6 +167,30 @@ class CalculatorTest {
 
         calculator.currentState shouldBe State.Operand1
         calculator.currentExtendedState shouldBe ExtendedState(operand1 = "702")
+    }
+
+    @Test
+    fun `calculator can handle negative numbers in the first operand`() = runBlocking {
+        calculator.processEvents("-69 + 42 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "-27")
+    }
+
+    @Test
+    fun `calculator can handle negative numbers in the second operand`() = runBlocking {
+        calculator.processEvents("69 * -42 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "-2898")
+    }
+
+    @Test
+    fun `calculator mega test`() = runBlocking {
+        calculator.processEvents("0.69 * -42 + -82.5 * .1 / 7 =")
+
+        calculator.currentState shouldBe State.Operand1
+        calculator.currentExtendedState shouldBe ExtendedState(operand1 = "-1.5925714285714285")
     }
 
     private suspend fun StateMachine<State, ExtendedState, Event>.processEvents(input: String) {

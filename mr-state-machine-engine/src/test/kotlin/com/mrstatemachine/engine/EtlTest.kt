@@ -42,12 +42,13 @@ class EtlTest {
 
         val etl = StateMachine<State, ExtendedState, Event> {
             startingState(State.Waiting)
+            startingExtendedState(ExtendedState())
 
             stateDefinition(State.Waiting) {
                 on<Event.Run> {
                     transitionTo(State.Extracting)
 
-                    execute { _, _ -> ExtendedState() }
+                    execute { _ -> ExtendedState() }
                 }
             }
 
