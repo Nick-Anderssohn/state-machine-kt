@@ -1,5 +1,5 @@
-# Mr. State Machine
-I'm Mr. State Machine! Look at me! Hehehe!
+# State Machine Kt
+A state machine library in kotlin
 
 ## Goals
 * Easy to use, has an intuitive DSL.
