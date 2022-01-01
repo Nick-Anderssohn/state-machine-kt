@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 class SocialMediaNotificationsTest {
     sealed class Event {

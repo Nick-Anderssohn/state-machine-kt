@@ -1,14 +1,14 @@
-package com.mrstatemachine.dsl
+package com.statemachinekt.dsl
 
-import com.mrstatemachine.engine.Action
-import com.mrstatemachine.engine.ExtendedStateStore
-import com.mrstatemachine.engine.StateMachine
-import com.mrstatemachine.engine.StateMachineConfig
-import com.mrstatemachine.engine.StateStore
-import com.mrstatemachine.engine.StateTransition
-import com.mrstatemachine.engine.TransitionTask
-import com.mrstatemachine.engine.TransitionTaskResult
-import com.mrstatemachine.engine.Vertex
+import com.statemachinekt.engine.Action
+import com.statemachinekt.engine.ExtendedStateStore
+import com.statemachinekt.engine.StateMachine
+import com.statemachinekt.engine.StateMachineConfig
+import com.statemachinekt.engine.StateStore
+import com.statemachinekt.engine.StateTransition
+import com.statemachinekt.engine.TransitionTask
+import com.statemachinekt.engine.TransitionTaskResult
+import com.statemachinekt.engine.Vertex
 
 @StateMachineDslMarker
 class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {

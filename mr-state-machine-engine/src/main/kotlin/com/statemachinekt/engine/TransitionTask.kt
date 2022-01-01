@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 data class TransitionTaskResult<TStateBase : Any, TExtendedState : Any>(
     /**

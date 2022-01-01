@@ -1,4 +1,4 @@
-package com.mrstatemachine.dsl
+package com.statemachinekt.dsl
 
 @DslMarker
 annotation class StateMachineDslMarker

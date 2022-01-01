@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 /**
  * Transition pointing to a state

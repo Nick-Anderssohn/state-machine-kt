@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 internal data class StateStore<TStateBase : Any, TExtendedState : Any> (
     internal val acceptingState: TStateBase,

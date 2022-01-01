@@ -1,6 +1,6 @@
-package com.mrstatemachine.engine.calculator
+package com.statemachinekt.engine.calculator
 
-import com.mrstatemachine.engine.StateMachine
+import com.statemachinekt.engine.StateMachine
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach

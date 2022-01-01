@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine.calculator
+package com.statemachinekt.engine.calculator
 
 sealed class State {
     object Off : State()

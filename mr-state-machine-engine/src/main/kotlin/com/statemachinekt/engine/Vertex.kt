@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 internal data class Vertex<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor(
     internal val state: TStateBase?,

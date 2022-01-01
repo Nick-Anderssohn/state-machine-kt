@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 import com.google.gson.Gson
 import io.kotlintest.shouldBe

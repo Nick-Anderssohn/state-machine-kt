@@ -1,6 +1,6 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
-import com.mrstatemachine.dsl.StateMachineBuilder
+import com.statemachinekt.dsl.StateMachineBuilder
 import java.lang.IllegalArgumentException
 
 class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor (

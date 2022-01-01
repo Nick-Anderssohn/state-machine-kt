@@ -1,13 +1,19 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
-class LightBulbTest {
+class AlternativeLightBulbTest {
+    enum class Position {
+        ON,
+        OFF
+    }
+
     sealed class Event {
-        object OnClicked : Event()
-        object OffClicked : Event()
+        data class PowerToggled(
+            val newPosition: Position
+        ) : Event()
     }
 
     sealed class State {
@@ -16,23 +22,32 @@ class LightBulbTest {
     }
 
     @Test
-    fun `light bulb state machine transitions correctly`() {
+    fun `alternative light bulb state machine transitions correctly`() {
         val transitionRecords: MutableList<String> = mutableListOf()
+
+        val togglePower = TransitionTask<Event.PowerToggled, State, Unit> { event: Event.PowerToggled, store ->
+            transitionRecords += when (event.newPosition) {
+                Position.ON -> "light on"
+                Position.OFF -> "light off"
+            }
+
+            TransitionTaskResult(store.extendedState)
+        }
 
         val stateMachine = StateMachine<State, Unit, Event> {
             startingState(State.LightOff)
             startingExtendedState(Unit)
 
             stateDefinition(State.LightOff) {
-                on<Event.OnClicked> {
-                    execute { -> transitionRecords += "light on" }
+                on<Event.PowerToggled> {
+                    execute(togglePower)
                     transitionTo(State.LightOn)
                 }
             }
 
             stateDefinition(State.LightOn) {
-                on<Event.OffClicked> {
-                    execute { -> transitionRecords += "light off" }
+                on<Event.PowerToggled> {
+                    execute(togglePower)
                     transitionTo(State.LightOff)
                 }
             }
@@ -41,13 +56,13 @@ class LightBulbTest {
         runBlocking {
             stateMachine.currentState shouldBe State.LightOff
 
-            stateMachine.processEvent(Event.OnClicked)
+            stateMachine.processEvent(Event.PowerToggled(Position.ON))
 
             transitionRecords shouldBe mutableListOf("light on")
 
             stateMachine.currentState shouldBe State.LightOn
 
-            stateMachine.processEvent(Event.OffClicked)
+            stateMachine.processEvent(Event.PowerToggled(Position.OFF))
 
             transitionRecords shouldBe mutableListOf(
                 "light on",

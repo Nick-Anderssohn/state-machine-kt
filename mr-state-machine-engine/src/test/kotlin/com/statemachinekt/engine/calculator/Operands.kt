@@ -1,7 +1,7 @@
-package com.mrstatemachine.engine.calculator
+package com.statemachinekt.engine.calculator
 
-import com.mrstatemachine.engine.TransitionTask
-import com.mrstatemachine.engine.TransitionTaskResult
+import com.statemachinekt.engine.TransitionTask
+import com.statemachinekt.engine.TransitionTaskResult
 import java.lang.IllegalStateException
 
 sealed class Operands(

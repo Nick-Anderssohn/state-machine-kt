@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 @PublishedApi
 internal inline fun <T> T.applyIf(condition: Boolean, fn: T.() -> Unit): T {

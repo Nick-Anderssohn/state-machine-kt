@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>mr-state-machine</artifactId>
-    <groupId>com.mrstatemachine</groupId>
+    <groupId>statemachinekt</groupId>
     <version>0.1-SNAPSHOT</version>
   </parent>
 
@@ -15,7 +15,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.mrstatemachine</groupId>
+      <groupId>statemachinekt</groupId>
       <artifactId>mr-state-machine-interfaces</artifactId>
       <version>0.1-SNAPSHOT</version>
       <scope>compile</scope>

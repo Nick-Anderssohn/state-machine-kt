@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 class ExtendedStateStore<TExtendedState : Any>internal constructor(
     @Volatile

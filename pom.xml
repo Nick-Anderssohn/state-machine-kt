@@ -6,7 +6,7 @@
 
   <packaging>pom</packaging>
 
-  <groupId>com.mrstatemachine</groupId>
+  <groupId>statemachinekt</groupId>
   <artifactId>mr-state-machine</artifactId>
   <version>0.1-SNAPSHOT</version>
 

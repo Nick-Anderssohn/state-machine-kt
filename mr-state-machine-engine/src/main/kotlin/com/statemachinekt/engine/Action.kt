@@ -1,4 +1,4 @@
-package com.mrstatemachine.engine
+package com.statemachinekt.engine
 
 data class ActionResult<TEventBase : Any, TExtendedState : Any>(
     /**
