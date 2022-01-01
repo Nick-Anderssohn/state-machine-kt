@@ -1,11 +1,13 @@
 package com.mrstatemachine.engine
 
 import com.mrstatemachine.dsl.StateMachineBuilder
+import java.lang.IllegalArgumentException
 
 class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> internal constructor (
     private val stateStore: StateStore<TStateBase, TExtendedState>,
     private val vertices: Map<TStateBase, Vertex<TStateBase, TExtendedState, TEventBase>>,
-    private val superVertex: Vertex<TStateBase, TExtendedState, TEventBase>
+    private val superVertex: Vertex<TStateBase, TExtendedState, TEventBase>,
+    private val config: StateMachineConfig
 ) {
     // Will never be null since currentVertex will never be superVertex,
     // which is the only one that is allowed to have a null state.
@@ -38,7 +40,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
     suspend fun <TEvent : TEventBase> processEvent(event: TEvent) {
         val transition = currentVertex.transitions[event::class.java]
             ?: superVertex.transitions[event::class.java]
-            ?: return
+            ?: return handleUnknownEvent(event)
 
         val transitionResult = transition.task?.let {
             @Suppress("UNCHECKED_CAST")
@@ -58,5 +60,11 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
         stateStore.extendedStateStore.extState = result.extendedState
 
         result.eventToTrigger?.let { processEvent(it) }
+    }
+
+    private fun <TEvent : TEventBase> handleUnknownEvent(event: TEvent) {
+        if (config.throwExceptionOnUnrecognizedEvent) {
+            throw IllegalArgumentException("cannot handle event $event")
+        }
     }
 }

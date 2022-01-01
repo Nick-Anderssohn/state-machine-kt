@@ -3,6 +3,7 @@ package com.mrstatemachine.dsl
 import com.mrstatemachine.engine.Action
 import com.mrstatemachine.engine.ExtendedStateStore
 import com.mrstatemachine.engine.StateMachine
+import com.mrstatemachine.engine.StateMachineConfig
 import com.mrstatemachine.engine.StateStore
 import com.mrstatemachine.engine.StateTransition
 import com.mrstatemachine.engine.TransitionTask
@@ -13,6 +14,8 @@ import com.mrstatemachine.engine.Vertex
 class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any> {
     private lateinit var acceptingState: TStateBase
     private lateinit var acceptingExtendedState: TExtendedState
+
+    private var stateMachineConfig: StateMachineConfig? = null
 
     private val extendedStateStore by lazy {
         check(this::acceptingExtendedState.isInitialized) {
@@ -51,6 +54,10 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         }
 
         acceptingState = value
+    }
+
+    fun withConfig(config: StateMachineConfig) {
+        this.stateMachineConfig = config
     }
 
     fun startingExtendedState(value: TExtendedState) {
@@ -92,7 +99,8 @@ class StateMachineBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : A
         stateStore = stateStore,
         vertices = vertexBuilders.map { it.key to it.value.build() }.toMap(),
         superVertex = superVertexBuilder?.build()
-            ?: VertexBuilder<TStateBase, TExtendedState, TEventBase>(null, stateStore).build()
+            ?: VertexBuilder<TStateBase, TExtendedState, TEventBase>(null, stateStore).build(),
+        config = stateMachineConfig ?: StateMachineConfig()
     )
 }
 
