@@ -62,6 +62,7 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
         result.eventToTrigger?.let { processEvent(it) }
     }
 
+    // TODO: Actually, make this configurable at the vertex level too.
     private fun <TEvent : TEventBase> handleUnknownEvent(event: TEvent) {
         if (config.throwExceptionOnUnrecognizedEvent) {
             throw IllegalArgumentException("cannot handle event $event")
