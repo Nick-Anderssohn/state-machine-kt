@@ -26,7 +26,7 @@ Wikipedia page in its current state in case someone hops on Wikipedia and screws
     can implement guards by performing checks within the transition task and allowing the task
     to determine which state to transition to.
 - [x] [Entry actions](https://en.wikipedia.org/wiki/UML_state_machine#Orthogonal_regions)
-- [ ] [Exit actions](https://en.wikipedia.org/wiki/UML_state_machine#Orthogonal_regions)
+- [x] [Exit actions](https://en.wikipedia.org/wiki/UML_state_machine#Orthogonal_regions)
 - [ ] [Hierarchically nested states](https://en.wikipedia.org/wiki/UML_state_machine#Hierarchically_nested_states)
   - Note to self: I sort of accidentally implemented this to an extent with the
     `applyToAllStateDefinitions`/super vertex I added. Will create a more generalized solution

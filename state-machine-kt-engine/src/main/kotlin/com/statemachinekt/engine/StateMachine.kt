@@ -51,6 +51,11 @@ class StateMachine<TStateBase : Any, TExtendedState : Any, TEventBase : Any> int
             this.extendedStateStore.extState = transitionResult!!.extendedState
         }
 
+        // Run exit action if we are transitioning to a different state
+        if (transitionResult?.nextState != null && transitionResult.nextState != currentState) {
+            currentVertex.exit(event)
+        }
+
         currentVertex = vertices[transitionResult?.nextState ?: transition.next ?: currentState]!!
 
         val result = currentVertex.arrive(event)

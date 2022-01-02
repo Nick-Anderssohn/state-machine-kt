@@ -115,7 +115,9 @@ class VertexBuilder<
 ) {
     private val transitions = mutableMapOf<Class<out TEventBase>, StateTransition<TStateBase, TExtendedState, *>>()
 
-    private var arrivalBuilder: ArrivalBuilder<TStateBase, TExtendedState, TEventBase>? = null
+    private var arrivalBuilder: ActionBuilder<TStateBase, TExtendedState, TEventBase>? = null
+
+    private var exitBuilder: ActionBuilder<TStateBase, TExtendedState, TEventBase>? = null
 
     inline fun <reified TEvent : TEventBase> on(noinline fn: TransitionBuilder<TStateBase, TExtendedState, TEvent>.() -> Unit) {
         on(TEvent::class.java, fn)
@@ -133,9 +135,9 @@ class VertexBuilder<
             .build()
     }
 
-    fun uponArrival(fn: ArrivalBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit) {
+    fun uponArrival(fn: ActionBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit) {
         arrivalBuilder = if (arrivalBuilder == null) {
-            ArrivalBuilder()
+            ActionBuilder()
         } else {
             arrivalBuilder
         }
@@ -143,30 +145,37 @@ class VertexBuilder<
         arrivalBuilder!!.fn()
     }
 
-    internal fun build(): Vertex<TStateBase, TExtendedState, TEventBase> {
-        val arrivalBuildData = arrivalBuilder?.build()
+    fun uponExit(fn: ActionBuilder<TStateBase, TExtendedState, TEventBase>.() -> Unit) {
+        exitBuilder = if (exitBuilder == null) {
+            ActionBuilder()
+        } else {
+            exitBuilder
+        }
 
-        return Vertex(
-            state = state,
-            transitions = transitions,
-            stateStore = stateStore,
-            onArrival = arrivalBuildData?.onArrival
-        )
+        exitBuilder!!.fn()
     }
+
+    internal fun build() = Vertex(
+        state = state,
+        transitions = transitions,
+        stateStore = stateStore,
+        onArrival = arrivalBuilder?.build()?.action,
+        onExit = exitBuilder?.build()?.action
+    )
 }
 
 @StateMachineDslMarker
-class ArrivalBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>internal constructor() {
+class ActionBuilder<TStateBase : Any, TExtendedState : Any, TEventBase : Any>internal constructor() {
     private val result = BuildData<TExtendedState, TEventBase>()
 
     fun execute(fn: Action<TEventBase, TExtendedState>) {
-        this.result.onArrival = fn
+        this.result.action = fn
     }
 
     internal fun build() = result
 
     data class BuildData<TExtendedState : Any, TEventBase : Any>(
-        var onArrival: Action<TEventBase, TExtendedState>? = null
+        var action: Action<TEventBase, TExtendedState>? = null
     )
 }
 
