@@ -2,6 +2,9 @@
 A state machine library in kotlin. Great for both backend (e.x. a service or worker)
 and frontend (e.x. android).
 
+## Examples
+Check out [the tests folder](./state-machine-kt-engine/src/test/kotlin/com/statemachinekt/engine) for examples of how to use this library.
+
 ## Goals
 * Easy to use, has an intuitive DSL.
 * Fast and efficient, leverages coroutines
